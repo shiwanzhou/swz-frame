@@ -6,6 +6,16 @@
     var SWZ = function(selector, context) {
         return  new SWZ.prototype.init(selector,context);
     }
+    /***********javascript 底层补丁**************/
+    var objectP = Object.prototype;
+    var ohasOwn = objectP.hasOwnProperty;
+    var serialize = objectP.toString;
+    if(!SWZ.isArray){
+        SWZ.isArray = function(n){
+            return objectP.toString.call(n) === "[object Array]";
+        }
+    }
+    /***********主方法**************/
     SWZ.fn =  SWZ.prototype = {
         init: function( selector, context, rootjQuery ) {
             var that = this;
@@ -29,9 +39,6 @@
            return this.textContent;
         }
     };
-
-
-
     SWZ.prototype.init.prototype = SWZ.prototype;
     window.$ = SWZ;
 })(window);
