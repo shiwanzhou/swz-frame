@@ -18,4 +18,4 @@ git 使用说明：
 
 9.git checkout master;
   把issueFix中的内容Merge进来：
-  git merge issueFix;
+  git merge issueFix;(http://blog.csdn.net/wangjia55/article/details/8791195)
