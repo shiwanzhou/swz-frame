@@ -1,0 +1,11 @@
+
+
+git 使用说明：
+
+最开始：http://www.tuicool.com/articles/j2iqaa，git 和github 连接说明；
+
+1.建个git-demo 目录(如果没和github 连接先连接)；
+2.如果有代码直接git init,否则先git init 后clone代码，一定要git init;
+3.提交 git add swz.html;git commit -m sss;
+4.git pull origin master;
+5.git push origin master;
