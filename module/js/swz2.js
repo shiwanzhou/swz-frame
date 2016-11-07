@@ -74,6 +74,10 @@
             return objectP.toString.call(n) === "[object Array]";
         }
     }
+    /*获取node对象名称*/
+    SWZ.nodeName = function( elem, name ) {
+        return elem.nodeName && elem.nodeName.toLowerCase() === name.toLowerCase();
+    };
     /*验证函数*/
     SWZ.isFunction  = function(fn){
         if(typeof alert === "object"){
@@ -196,6 +200,14 @@
         }
         return fragment
     };
+    /*操作目标对象*/
+    SWZ.manipulationTarget  = function ( elem, content ) {
+        if ( SWZ.nodeName( elem, "table" ) &&
+            SWZ.nodeName( content.nodeType !== 11 ? content : content.firstChild, "tr" ) ) {
+            return elem.getElementsByTagName( "tbody" )[ 0 ] || elem;
+        }
+        return elem;
+    };
 
     /***********主方法**************/
     SWZ.fn =  SWZ.prototype = {
@@ -210,6 +222,7 @@
                     that =   document.getElementById(selector);
                 }
             }
+            that.selectName = selector;
             that.text = this.text;
             that.html = this.html;
             that.attr = this.attr;
@@ -217,6 +230,7 @@
             that.removeClass = this.removeClass;
             that.val = this.val;
             that.append = this.append;
+            that.prepend = this.prepend;
             return that;
         },
         html:function(){
@@ -251,9 +265,11 @@
 
             }
         },
-        appendTo:function(dom){
+        prepend:function(dom){
             if(typeof  dom === "string"){
-                this.insertBefore(SWZ.parseHTML(dom));
+                var target = SWZ.manipulationTarget( this,  SWZ.parseHTML(dom) );
+               // console.log(SWZ.parseHTML(dom))
+                target.insertBefore( SWZ.parseHTML(dom), target.firstChild );
             }
             return  this;
         },
