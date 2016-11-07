@@ -37,8 +37,23 @@
         },
         text:function(){
            return this.textContent;
+        },
+        addClass:function(){
+            
+
+        },
+        val:function(value){
+            if(value){
+
+            }else{
+
+            }
         }
     };
+
+
+
+
     SWZ.prototype.init.prototype = SWZ.prototype;
     window.$ = SWZ;
 })(window);
