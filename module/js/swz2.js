@@ -30,6 +30,10 @@
             }
             that.text = this.text;
             that.html = this.html;
+            that.attr = this.attr;
+            that.addClass = this.addClass;
+            that.removeClass = this.removeClass;
+            that.val = this.val;
             return that;
         },
         html:function(){
@@ -38,8 +42,19 @@
         text:function(){
            return this.textContent;
         },
-        addClass:function(){
-            
+        attr:function(name,value){
+            if (arguments.length === 2) {
+                name == 'class'? this.className = value :this.setAttribute(name, value);
+                return this
+            } else {
+                return  name == 'class'? this.className:this.getAttribute(name);
+            }
+        },
+        hasClass:function(){
+
+        },
+        addClass:function(value){
+
 
         },
         removeClass:function(){
@@ -52,6 +67,9 @@
             }else{
 
             }
+        },
+        append:function(){
+
         }
     };
 
