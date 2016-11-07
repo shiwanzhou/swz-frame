@@ -42,6 +42,10 @@
             
 
         },
+        removeClass:function(){
+
+
+        },
         val:function(value){
             if(value){
 
