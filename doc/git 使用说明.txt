@@ -1,0 +1,21 @@
+
+
+git 使用说明：
+
+最开始：http://www.tuicool.com/articles/j2iqaa，git 和github 连接说明；
+
+1.建个git-demo 目录(如果没和github 连接先连接)；
+2.如果有代码直接git init,否则先git init 后clone代码，一定要git init;
+3.提交 git add swz.html;git commit -m sss;
+4.git pull origin master;
+5.git push origin master;
+6.git remote rm origin;(删除远程仓库)
+7.git remote add origin [url]（先删后加）
+
+8.git rm -r --f *
+  git commit -m"删除远程仓库文件夹"
+  git push origin master
+
+9.git checkout master;
+  把issueFix中的内容Merge进来：
+  git merge issueFix;(http://blog.csdn.net/wangjia55/article/details/8791195)
