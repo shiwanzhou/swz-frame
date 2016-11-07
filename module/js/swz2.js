@@ -29,7 +29,7 @@
     var W3C = window.dispatchEvent;
     var DOC = document;
     var rhtml = /<|&#?\w+;/;
-    var avalonFragment = DOC.createDocumentFragment();
+    var swzFragment = DOC.createDocumentFragment();
     var rtagName = /<([\w:]+)/;  //取得其tagName
     var rxhtml = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:]+)[^>]*)\/>/ig;
     var rcreate = W3C ? /[^\d\D]/ : /(<(?:script|link|style|meta|noscript))/ig;
@@ -108,7 +108,7 @@
             class2type[serialize.call(obj)] || "object" :
             typeof obj
     };
-    /*判断是否是一个纯对象*/
+    /*判断是否是一个纯对象(object),不是DOM对象，不是BOM对象，不是自定义类的实例*/
     SWZ.isPlainObject = function (obj, key) {
         if (!obj || SWZ.type(obj) !== "object" || obj.nodeType || SWZ.isWindow(obj)) {
             return false;
@@ -131,12 +131,12 @@
     };
      /*对字符串转成html 对象*/
     SWZ.parseHTML = function (html) {
-        var fragment = avalonFragment.cloneNode(false);
+        var fragment = swzFragment.cloneNode(false);
         if (typeof html !== "string") {
             return fragment
         }
         if (!rhtml.test(html)) {
-            fragment.appendChild(DOC.createTextNode(html))
+            fragment.appendChild(DOC.createTextNode(html));
             return fragment
         }
         html = html.replace(rxhtml, "<$1></$2>").trim();
@@ -226,6 +226,8 @@
             that.text = this.text;
             that.html = this.html;
             that.attr = this.attr;
+            that.css = this.css;
+            that.hasClass = this.hasClass;
             that.addClass = this.addClass;
             that.removeClass = this.removeClass;
             that.val = this.val;
@@ -247,7 +249,17 @@
                 return  name == 'class'? this.className:this.getAttribute(name);
             }
         },
+        css:function(obj,value){
+            if(arguments.length === 2){
+                this.style[obj]= value;
+            }else{
+               for(var key in obj){
+                   this.style[key] = obj[key];
+               }
+            }
+        },
         hasClass:function(){
+
 
         },
         addClass:function(value){
@@ -268,7 +280,6 @@
         prepend:function(dom){
             if(typeof  dom === "string"){
                 var target = SWZ.manipulationTarget( this,  SWZ.parseHTML(dom) );
-               // console.log(SWZ.parseHTML(dom))
                 target.insertBefore( SWZ.parseHTML(dom), target.firstChild );
             }
             return  this;
