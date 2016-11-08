@@ -26,6 +26,7 @@
     "Boolean Number String Function Array Date RegExp Object Error".replace(rword, function (name) {
         class2type["[object " + name + "]"] = name.toLowerCase()
     });
+    var isIe678 = !-[1,];
     var W3C = window.dispatchEvent;
     var DOC = document;
     var rhtml = /<|&#?\w+;/;
@@ -34,6 +35,7 @@
     var rxhtml = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:]+)[^>]*)\/>/ig;
     var rcreate = W3C ? /[^\d\D]/ : /(<(?:script|link|style|meta|noscript))/ig;
     var rnest = /<(?:tb|td|tf|th|tr|col|opt|leg|cap|area)/ ;//需要处理套嵌关系的标签
+    var rwindow = /^\[object (?:Window|DOMWindow|global)\]$/;
     var script = DOC.createElement("script");
     var ap = Array.prototype;
     var cinerator = DOC.createElement("div");
@@ -92,11 +94,15 @@
     };
     /*验证window*/
     SWZ.isWindow = function(obj){
-        if (!obj)
-            return false;
-        // 利用IE678 window == document为true,document == window竟然为false的神奇特性
-        // 标准浏览器及IE9，IE10等使用 正则检测
-        return obj == obj.document && obj.document != obj ;//jshint ignore:line
+        if(isIe678){
+            if (!obj)
+                return false;
+            // 利用IE678 window == document为true,document == window竟然为false的神奇特性
+            // 标准浏览器及IE9，IE10等使用 正则检测
+            return obj == obj.document && obj.document != obj ;//jshint ignore:line
+        }else{
+            return rwindow.test(serialize.call(obj));
+        }
     };
     /**/
     SWZ.type = function (obj) { //取得目标的类型
@@ -222,11 +228,11 @@
                     that =   document.getElementById(selector);
                 }
             }
-            that.selectName = selector;
             that.text = this.text;
             that.html = this.html;
             that.attr = this.attr;
             that.css = this.css;
+            that.getClass = this.getClass;
             that.hasClass = this.hasClass;
             that.addClass = this.addClass;
             that.removeClass = this.removeClass;
@@ -258,24 +264,55 @@
                }
             }
         },
-        hasClass:function(){
-
-
+        getClass:function(){
+            if(this.className){
+                return this.className;
+            }else{
+                return this.getAttribute && this.getAttribute( "class" ) || "";
+            }
+        },
+        hasClass:function(selector){
+            if(this.nodeType === 1){
+                var classStr = this.getClass();
+                if(classStr.indexOf(selector) > -1){
+                    return true;
+                }
+            }
+            return false;
         },
         addClass:function(value){
-
-
+            if ( typeof value === "string" && value ) {
+                var classStr = this.getClass();
+                var classList = this.getClass().split(/\s+/);
+                if(classStr.indexOf(value) <= -1){
+                    classList.push(value);
+                }
+                this.attr("class",classList.join(" "))
+            }
+            return this;
         },
-        removeClass:function(){
-
-
+        removeClass:function(value){
+            if ( typeof value === "string" && value ) {
+                var classStr = this.getClass();
+                var classList = this.getClass().split(/\s+/);
+                if(classStr.indexOf(value) > -1){
+                    classList.splice(value, 1);
+                }
+                this.attr("class",classList.join(" "));
+            }
+            return this;
         },
         val:function(value){
-            if(value){
-
-            }else{
-
+            var val,get;
+            if (this && this.nodeType === 1) {
+                get = arguments.length === 0;
+                if(get){
+                    val = this.value;
+                }else{
+                    this.value = value;
+                }
             }
+            return  get ? val : this;
         },
         prepend:function(dom){
             if(typeof  dom === "string"){
