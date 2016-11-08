@@ -30,6 +30,19 @@
 
       .prepend(str);向每个匹配元素内部的起始位置追加指定的内容:参数目前仅支持字符串；
 
+      .css(obj,value);返回或设置匹配的元素的一个或多个样式属性,例如$("#test").css("color","red"),或者$("#test").css({"color":"red"})；
+
+      .getClass();获取元素class属性的值，例如$("#test").getClass()；
+
+      .hasClass(str);检查被选元素是否包含指定的 class，例如$("#test").hasClass(str)；参数目前仅支持字符串；返回boolean;
+
+      .addClass(class);向被选元素添加一个或多个类，例如$("#test").addClass("ddd")；参数目前仅支持字符串;
+
+      .removeClass(class);向被选元素添加一个或多个类，例如$("#test").removeClass("class")；参数目前仅支持字符串;
+
+
+
+
 
 
 
