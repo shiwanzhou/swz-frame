@@ -224,6 +224,7 @@
         return elem;
     };
 
+
     /***********主方法**************/
     SWZ.fn =  SWZ.prototype = {
         init: function( selector, context, rootjQuery ) {
@@ -236,6 +237,8 @@
                 }else{
                     that =   document.getElementById(selector);
                 }
+            }else if(selector === document){
+                that.ready = this.ready;
             }
             that.text = this.text;
             that.html = this.html;
@@ -340,7 +343,48 @@
                 this.appendChild(SWZ.parseHTML(dom));
             }
             return  this;
-        }
+        },
+        /*检测 DOM 结构是否加载完成*/
+        ready : function(readyFn){
+                //非IE浏览器
+                if (document.addEventListener) {
+                    document.addEventListener('DOMContentLoaded', function () {
+                        readyFn && readyFn();
+                    }, false);
+                } else {
+                    //方案1和2哪个快用哪一个
+                    var bReady = false;
+                    //方案1
+                    document.attachEvent('onreadystatechange', function () {
+                        if (bReady) {
+                            return;
+                        }
+                        if (document.readyState == 'complete' || document.readyState == "interactive") {
+                            bReady = true;
+                            readyFn && readyFn();
+                        }
+                    });
+                    //方案2
+                    //判断当前页是否被放在了iframe里
+                    if (!window.frameElement) {
+                        setTimeout(checkDoScroll, 1);
+                    }
+                    function checkDoScroll() {
+                        try {
+                            document.documentElement.doScroll("left");
+                            if (bReady) {
+                                return;
+                            }
+                            bReady = true;
+                            readyFn && readyFn();
+                        }
+                        catch (e) {
+                            // 不断检查 doScroll 是否可用 - DOM结构是否加载完成
+                            setTimeout(checkDoScroll, 1);
+                        }
+                    }
+                }
+           }
     };
     /********SWZ扩展************/
     SWZ.extend = SWZ.fn.extend = function () {
@@ -358,7 +402,7 @@
         }
 
         //确保接受方为一个复杂的数据类型
-        if (typeof target !== "object" && !isFunction(target)) {
+        if (typeof target !== "object" && !SWZ.isFunction(target)) {
             target = {}
         }
 
