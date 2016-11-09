@@ -104,6 +104,15 @@
             return rwindow.test(serialize.call(obj));
         }
     };
+    /*验证是否是IE*/
+    SWZ.IEVersion =  function () {
+        if (window.VBArray) {
+            var mode = document.documentMode;
+            return mode ? mode : window.XMLHttpRequest ? 7 : 6
+        } else {
+            return NaN
+        }
+    };
     /**/
     SWZ.type = function (obj) { //取得目标的类型
         if (obj == null) {
@@ -307,7 +316,12 @@
             if (this && this.nodeType === 1) {
                 get = arguments.length === 0;
                 if(get){
-                    val = this.value;
+                    var roption = /^<option(?:\s+\w+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)*\s+value[\s=]/i;
+                    if(SWZ.IEVersion()){
+                         roption.test(this.outerHTML) ? val = this.value : val = this.text.trim();
+                    }else{
+                        val =  this.value;
+                    }
                 }else{
                     this.value = value;
                 }
