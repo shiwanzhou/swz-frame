@@ -42,7 +42,7 @@
 
       .val(str);方法返回或设置被选元素的值, 元素的值是通过 value 属性设置的。该方法大多用于 input 元素;
 
-
+      .ready():函数规定当 ready 事件发生时执行的代码,函数仅能用于当前文档，因此无需选择器,允许$(document).ready(function)；
 
 
 
