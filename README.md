@@ -40,6 +40,9 @@
 
       .removeClass(class);向被选元素添加一个或多个类，例如$("#test").removeClass("class")；参数目前仅支持字符串;
 
+      .val(str);方法返回或设置被选元素的值, 元素的值是通过 value 属性设置的。该方法大多用于 input 元素;
+
+
 
 
 
