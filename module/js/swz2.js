@@ -29,6 +29,7 @@
     var isIe678 = !-[1,];
     var W3C = window.dispatchEvent;
     var DOC = document;
+    var root = DOC.documentElement;
     var rhtml = /<|&#?\w+;/;
     var swzFragment = DOC.createDocumentFragment();
     var rtagName = /<([\w:]+)/;  //取得其tagName
@@ -223,7 +224,203 @@
         }
         return elem;
     };
+    /*JSON 字符串 转 JSON 对象*/
+    SWZ.parseJSON = window.JSON ? JSON.parse : function(data) {
+        var rvalidchars = /^[\],:{}\s]*$/,
+            rvalidbraces = /(?:^|:|,)(?:\s*\[)+/g,
+            rvalidescape = /\\(?:["\\\/bfnrt]|u[\da-fA-F]{4})/g,
+            rvalidtokens = /"[^"\\\r\n]*"|true|false|null|-?(?:\d+\.|)\d+(?:[eE][+-]?\d+|)/g
+        if (typeof data === "string") {
+            data = data.trim();
+            if (data) {
+                if (rvalidchars.test(data.replace(rvalidescape, "@")
+                    .replace(rvalidtokens, "]")
+                    .replace(rvalidbraces, ""))) {
+                    return (new Function("return " + data))() // jshint ignore:line
+                }
+            }
+        }
+        return data
+    };
+    var meta = {
+        '\b': '\\b',
+        '\t': '\\t',
+        '\n': '\\n',
+        '\f': '\\f',
+        '\r': '\\r',
+        '"': '\\"',
+        '\\': '\\\\'
+    };
+    /*JSON 对象转 字符串*/
+    SWZ.stringify = window.JSON && JSON.stringify || function(str) {
+        return '"' + str.replace(/[\\\"\x00-\x1f]/g, function(a) {
+            var str = meta[a];
+            return typeof str === 'string' ? str :
+                '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+        }) + '"'
+    };
+    /*参数格式化*/
+    SWZ.formatParams = function(data){
+        var arr = [];
+        for (var name in data) {
+            arr.push(encodeURIComponent(name) + "=" + encodeURIComponent(data[name]));
+        }
+        arr.push(("v=" + Math.random()).replace(".",""));
+        return arr.join("&");
+    };
+    /*jsonp 请求*/
+    SWZ.jsonp =  function (options) {
+        options = options || {};
+        if (!options.url) {
+            throw new Error("参数不合法");
+        }
+        /*默认名字为callback*/
+        if(!options.jsonp){
+            options.jsonp = "callback";
+        }
 
+        //创建 script 标签并加入到页面中
+        var callbackName = ('jsonp_' + Math.random()).replace(".", "");
+        var oHead = document.getElementsByTagName('head')[0];
+        options.data[options.jsonp] = callbackName;
+        var params = SWZ.formatParams(options.data);
+        var oS = document.createElement('script');
+        oHead.appendChild(oS);
+
+        //创建jsonp回调函数
+        window[callbackName] = function (json) {
+            oHead.removeChild(oS);
+            clearTimeout(oS.timer);
+            window[callbackName] = null;
+            options.success && options.success(json);
+        };
+
+        //发送请求
+        oS.src = options.url + '?' + params;
+
+        //超时处理
+        if (options.timeout) {
+            oS.timer = setTimeout(function () {
+                window[callbackName] = null;
+                oHead.removeChild(oS);
+                options.fail && options.fail({ message: "超时" });
+            }, options.timeout);
+        }
+    };
+
+    /*ajax 封装*/
+    SWZ.ajax = function(options){
+            options = options || {};
+            options.type = (options.type || "GET").toUpperCase();
+            options.dataType = options.dataType || "json";
+            if(options.dataType === "jsonp" ){
+                SWZ.jsonp(options);
+                return;
+            }
+            var params = SWZ.formatParams(options.data);
+
+            //创建 - 非IE6
+            if (window.XMLHttpRequest) {
+                var xhr = new XMLHttpRequest();
+            } else { //IE6及其以下版本浏览器
+                var xhr = new ActiveXObject('Microsoft.XMLHTTP');
+            }
+
+            //连接和发送
+            if (options.type == "GET") {
+                xhr.open("GET", options.url + "?" + params, true);
+                xhr.send(null);
+            } else if (options.type == "POST") {
+                xhr.open("POST", options.url, true);
+                //设置表单提交时的内容类型
+                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                xhr.send(params);
+            }
+
+            //接收第三步
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4) {
+                    var status = xhr.status;
+                    if (status >= 200 && status < 300) {
+                        var res = SWZ.parseJSON(xhr.responseText);
+                        options.success && options.success(res, xhr.status);
+                    } else {
+                        options.fail && options.fail(xhr.responseText,xhr.status);
+                    }
+                }
+            };
+
+    };
+    /*得到工厂model*/
+    SWZ.modelFactory = function(source){
+        if (!source || source.nodeType > 0 || (source.$id && source.$events)) {
+            return source
+        }
+        var names = Object.keys(source);
+        /* jshint ignore:start */
+        var $model = {};
+        names.forEach(function (name, accessor) {
+            var val = source[name];
+            $model[name] = val;
+        });
+        return $model;
+    };
+    /*模块定义函数*/
+    var VMODELS = SWZ.vmodels = {};
+    SWZ.define =  function(id,factory){
+        var $id = id.$id || id;
+        if (!$id) {
+            throw new Error("warning: vm必须指定$id");
+        }
+        var scope = {};
+        factory(scope); //得到所有定义
+       var model = SWZ.modelFactory(scope);
+       VMODELS.$id = $id;
+       VMODELS.$model = model;
+       return VMODELS;
+    };
+
+    /*检测 DOM 结构是否加载完成*/
+    SWZ.ready  =  function(readyFn){
+        //非IE浏览器
+        if (document.addEventListener) {
+            document.addEventListener('DOMContentLoaded', function () {
+                readyFn && readyFn();
+            }, false);
+        } else {
+            //方案1和2哪个快用哪一个
+            var bReady = false;
+            //方案1
+            document.attachEvent('onreadystatechange', function () {
+                if (bReady) {
+                    return;
+                }
+                if (document.readyState == 'complete' || document.readyState == "interactive") {
+                    bReady = true;
+                    readyFn && readyFn();
+                }
+            });
+            //方案2
+            //判断当前页是否被放在了iframe里
+            if (!window.frameElement) {
+                setTimeout(checkDoScroll, 1);
+            }
+            function checkDoScroll() {
+                try {
+                    document.documentElement.doScroll("left");
+                    if (bReady) {
+                        return;
+                    }
+                    bReady = true;
+                    readyFn && readyFn();
+                }
+                catch (e) {
+                    // 不断检查 doScroll 是否可用 - DOM结构是否加载完成
+                    setTimeout(checkDoScroll, 1);
+                }
+            }
+        }
+    };
 
     /***********主方法**************/
     SWZ.fn =  SWZ.prototype = {
@@ -238,7 +435,7 @@
                     that =   document.getElementById(selector);
                 }
             }else if(selector === document){
-                that.ready = this.ready;
+                that.ready = SWZ.ready;
             }
             that.text = this.text;
             that.html = this.html;
@@ -343,48 +540,8 @@
                 this.appendChild(SWZ.parseHTML(dom));
             }
             return  this;
-        },
-        /*检测 DOM 结构是否加载完成*/
-        ready : function(readyFn){
-                //非IE浏览器
-                if (document.addEventListener) {
-                    document.addEventListener('DOMContentLoaded', function () {
-                        readyFn && readyFn();
-                    }, false);
-                } else {
-                    //方案1和2哪个快用哪一个
-                    var bReady = false;
-                    //方案1
-                    document.attachEvent('onreadystatechange', function () {
-                        if (bReady) {
-                            return;
-                        }
-                        if (document.readyState == 'complete' || document.readyState == "interactive") {
-                            bReady = true;
-                            readyFn && readyFn();
-                        }
-                    });
-                    //方案2
-                    //判断当前页是否被放在了iframe里
-                    if (!window.frameElement) {
-                        setTimeout(checkDoScroll, 1);
-                    }
-                    function checkDoScroll() {
-                        try {
-                            document.documentElement.doScroll("left");
-                            if (bReady) {
-                                return;
-                            }
-                            bReady = true;
-                            readyFn && readyFn();
-                        }
-                        catch (e) {
-                            // 不断检查 doScroll 是否可用 - DOM结构是否加载完成
-                            setTimeout(checkDoScroll, 1);
-                        }
-                    }
-                }
-           }
+        }
+
     };
     /********SWZ扩展************/
     SWZ.extend = SWZ.fn.extend = function () {
@@ -446,7 +603,83 @@
         }
         return target
     };
-    /*****************/
+
+    /*********扫描系统********/
+    SWZ.createSignalTower = function(elem, vmodel) {
+        var id = elem.getAttribute("avalonctrl") || vmodel.$id
+        elem.setAttribute("avalonctrl", id);
+        vmodel.$events.expr = elem.tagName + '[avalonctrl="' + id + '"]';
+    };
+    SWZ.scan = function(elem, vmodel) {
+        elem = elem || root;
+        var vmodels = vmodel ? [].concat(vmodel) : [];
+        console.log(vmodels)
+        SWZ.scanTag(elem, vmodels);
+    };
+   /*扫描主要标签*/
+    SWZ.scanTag = function(elem, vmodels){
+        var c = elem.getAttributeNode("ng-controller");
+        if(c){
+            var node = c;
+            var model = {
+                $id:node.value,
+                $model:{data:""},
+                data:""
+            };
+            SWZ.vmodels = model;
+            var newVmodel = SWZ.vmodels;
+            if (!newVmodel) {
+                return
+            }
+            vmodels =  [newVmodel].concat(vmodels);
+            console.log(vmodels)
+            var name = node.name;
+            elem.removeAttribute(name); //removeAttributeNode不会刷新[ms-controller]样式规则
+            SWZ(elem).removeClass(name);
+          //  SWZ.createSignalTower(elem, vmodel);
+        }
+        console.log(vmodels)
+        SWZ.scanAttr(elem, vmodels); //扫描特性节点
+    };
+    /*扫描特性节点*/
+    SWZ.scanAttr = function(elem, vmodels){
+        var stopScan = SWZ.oneObject("area,base,basefont,br,col,command,embed,hr,img,input,link,meta,param,source,track,wbr,noscript,script,style,textarea".toUpperCase());
+        if(!stopScan[elem.tagName]){
+            SWZ.scanNodeList(elem, vmodels);
+        }
+    };
+    var openTag, closeTag, rexpr, rexprg, rbind, rregexp = /[-.*+?^${}()|[\]\/\\]/g;
+    /*扫描子孙元素*/
+    SWZ.scanNodeList = function(elem, vmodels){
+       var nodes = elem.childNodes;
+        console.log(vmodels)
+        for(var i=0;i<nodes.length;i++){
+           /* if(nodes[i].nodeType === 1){
+                console.log(nodes[i])
+               // SWZ.scanTag(elem, vmodels);
+            }
+            if(nodes[i].nodeType === 3){
+               // console.log(nodes[i])
+            }*/
+            switch (nodes[i].nodeType) {
+                case 1:
+                     SWZ.scanTag(nodes[i], vmodels) //扫描元素节点
+                    break;
+                case 3:
+                    console.log(999)
+                   /* if(rexpr.test(node.nodeValue)){
+                        console.log(9999)
+                        console.log(node)
+                        SWZ.scanText(node, vmodels, i) //扫描文本节点
+                    }*/
+                    break
+            }
+        }
+    };
+
+    SWZ(document).ready(function(){
+        SWZ.scan(DOC.body);
+    });
 
 
     SWZ.prototype.init.prototype = SWZ.prototype;
