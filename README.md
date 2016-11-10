@@ -45,7 +45,6 @@
       .ready():函数规定当 ready 事件发生时执行的代码,函数仅能用于当前文档，因此无需选择器,允许$(document).ready(function)；
 
       .ajax();通过 HTTP 请求加载远程数据,目前支持url，type,dataType,data,success,fail 参数；
-
               例如：$.ajax({
                         url:"",
                         type:"",
