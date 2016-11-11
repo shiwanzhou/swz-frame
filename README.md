@@ -14,6 +14,10 @@
 
       .isWindow(obj):参数obj；
 
+      .parseJSON(obj):字符串转JSON 对象；例如：$.parseJSON(obj);
+
+      .stringify(str);JSON 对象转字符串；例如：$.stringify(obj);
+
    (2).选择器：
 
        id选择器：例如$("#test")；
@@ -44,7 +48,7 @@
 
       .ready():函数规定当 ready 事件发生时执行的代码,函数仅能用于当前文档，因此无需选择器,允许$(document).ready(function)；
 
-      .ajax();通过 HTTP 请求加载远程数据,目前支持url，type,dataType,data,success,fail 参数；
+      .ajax();通过 HTTP 请求加载远程数据,目前支持url，type,dataType,data,jsonp,success,fail 参数；
               例如：$.ajax({
                         url:"",
                         type:"",
@@ -53,6 +57,17 @@
                         success:function(res,status){},
                         fail:function(res,status){}
                      })；
+
+      (4).核心api：
+
+         .define("id",function(vm){vm.data = "fff"})： 定义模块，绑定数据，data对应页面中的{{data}},实现双向数据绑定；
+
+         .scan(dom):对节点进行扫描，处理数据绑定，渲染页面；
+
+
+
+
+
 
 
 
