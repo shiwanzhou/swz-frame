@@ -696,16 +696,16 @@
     var  openTag = /[-.*+?^${}()|[\]\/\\]/g;
     var  closeTag = /[-.*+?^${}()|[\]\/\\]/g;
     /*扫描子孙元素*/
-    SWZ.scanNodeList = function(elem, vmodels,re){
+    SWZ.scanNodeList = function(elem, vmodels){
        var nodes = elem.childNodes;
         for(var i=0;i<nodes.length;i++){
             switch (nodes[i].nodeType) {
                 case 1:
-                     SWZ.scanTag(nodes[i], vmodels,re) //扫描元素节点
+                     SWZ.scanTag(nodes[i], vmodels) //扫描元素节点
                     break;
                 case 3:
                     if(rexpr.test(nodes[i].nodeValue)){
-                        SWZ.scanText(nodes[i], vmodels,re); //扫描文本节点
+                        SWZ.scanText(nodes[i], vmodels); //扫描文本节点
                     }
                     break;
             }
@@ -777,9 +777,10 @@
 
    };
     /*扫描文本节点*/
-    SWZ.scanText = function(elem, vmodels,re){
+    SWZ.scanText = function(elem, vmodels){
       var roneTime = /^\s*::/;
       var rhasHtml = /\|\s*html(?:\b|$)/;
+      var textRxp2 = /^({{)(\w+)(}})$/g;
       var   tokens = SWZ.scanExpr(elem.nodeValue);
        var bindings = [];
         if (tokens.length) {
@@ -803,7 +804,7 @@
             }
            // elem.parentNode.replaceChild(swzFragment, elem);
         }
-        var nodeV = elem.nodeValue.trim().replace(textRxp,"$2");
+        var nodeV = elem.nodeValue.trim().replace(textRxp2,"$2");
         /*赋值操作*/
         for(var i=0;i<vmodels.length;i++){
             var model = vmodels[i].$model;
