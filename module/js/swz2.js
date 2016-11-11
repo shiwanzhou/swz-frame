@@ -3,6 +3,11 @@
 
 
 (function(window, undefined) {
+    function log() {
+        if (window.console) {
+            Function.apply.call(console.log, console, arguments)
+        }
+    }
     var SWZ = function(selector, context) {
         return  new SWZ.prototype.init(selector,context);
     }
@@ -627,6 +632,7 @@
    /*扫描主要标签*/
     SWZ.scanTag = function(elem, vmodels){
         var c = elem.getAttributeNode("ng-controller");
+        var re = elem.getAttributeNode("ng-repeat");
         if(c){
             var node = c;
             var newVmodel = SWZ.vmodels;
@@ -634,36 +640,72 @@
                 return
             }
             vmodels =  [newVmodel].concat(vmodels);
-            console.log(vmodels)
             var name = node.name;
             elem.removeAttribute(name); //removeAttributeNode不会刷新[ng-controller]样式规则
             SWZ(elem).removeClass(name);
           //  SWZ.createSignalTower(elem, vmodel);
         }
-        SWZ.scanAttr(elem, vmodels); //扫描特性节点
+        if(re){
+            SWZ.scanRepeat(elem,vmodels,re);
+
+        }else{
+            SWZ.scanAttr(elem, vmodels); //扫描特性节点
+        }
+
+    };
+    var textRxp = /^({{)(\w+)(\.)(\w+)(}})$/g;
+    /*ng-repeat 循环渲染数据实现*/
+    SWZ.scanRepeat = function(elem,vmodels,re){
+        var nodes = elem.childNodes;
+        var tag;
+        for(var i=0;i<nodes.length;i++){
+            if(nodes[i].nodeType === 1){
+                tag = nodes[i];
+            }
+        }
+        for(var i=0;i<vmodels.length;i++){
+            var model = vmodels[i].$model;
+            for(var j in model){
+                if(SWZ.isArray(model[j])){
+                    var repeatArr = model[j];
+                    var nodeText = tag.innerHTML.trim().replace(textRxp,"$4");
+                    elem.innerHTML = "";
+                    for(var r =0; r<repeatArr.length; r++){
+                        var newTag = tag.cloneNode();
+                        var obj = repeatArr[r];
+                        for(var m in obj){
+                            if(m == nodeText){
+                                newTag.innerHTML = obj[m];
+                            }
+                        }
+                        elem.appendChild(newTag);
+                     }
+                }
+            }
+        }
+
     };
     /*扫描特性节点*/
-    SWZ.scanAttr = function(elem, vmodels){
+    SWZ.scanAttr = function(elem, vmodels,re){
         var stopScan = SWZ.oneObject("area,base,basefont,br,col,command,embed,hr,img,input,link,meta,param,source,track,wbr,noscript,script,style,textarea".toUpperCase());
         if(!stopScan[elem.tagName]){
-            SWZ.scanNodeList(elem, vmodels);
+            SWZ.scanNodeList(elem, vmodels,re);
         }
     };
     var  rexpr = /[-.*+?^${}()|[\]\/\\]/g;
     var  openTag = /[-.*+?^${}()|[\]\/\\]/g;
     var  closeTag = /[-.*+?^${}()|[\]\/\\]/g;
     /*扫描子孙元素*/
-    SWZ.scanNodeList = function(elem, vmodels){
+    SWZ.scanNodeList = function(elem, vmodels,re){
        var nodes = elem.childNodes;
         for(var i=0;i<nodes.length;i++){
             switch (nodes[i].nodeType) {
                 case 1:
-                     SWZ.scanTag(nodes[i], vmodels) //扫描元素节点
+                     SWZ.scanTag(nodes[i], vmodels,re) //扫描元素节点
                     break;
                 case 3:
                     if(rexpr.test(nodes[i].nodeValue)){
-                        console.log("进入扫描文本节点")
-                        SWZ.scanText(nodes[i], vmodels); //扫描文本节点
+                        SWZ.scanText(nodes[i], vmodels,re); //扫描文本节点
                     }
                     break;
             }
@@ -735,10 +777,9 @@
 
    };
     /*扫描文本节点*/
-    SWZ.scanText = function(elem, vmodels){
+    SWZ.scanText = function(elem, vmodels,re){
       var roneTime = /^\s*::/;
       var rhasHtml = /\|\s*html(?:\b|$)/;
-      var textRxp = /^({{)(\w+)(}})$/g;
       var   tokens = SWZ.scanExpr(elem.nodeValue);
        var bindings = [];
         if (tokens.length) {
@@ -765,7 +806,7 @@
         var nodeV = elem.nodeValue.trim().replace(textRxp,"$2");
         /*赋值操作*/
         for(var i=0;i<vmodels.length;i++){
-            var model = vmodels[i];
+            var model = vmodels[i].$model;
             for(var j in model){
                 if(j === nodeV){
                     elem.nodeValue = model[j];
