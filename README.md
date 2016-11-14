@@ -66,12 +66,20 @@
               (3)data对应页面中的{{data}},实现单向数据绑定,目前支持当个单个多个{{data}}标签，前提是ng-controller存在；
               (4)ng-repeat指令，目前支持例如：
                                 <ul ng-repeat="arr">
-                                   <li>{{el.bb}}</li>
+                                   <li class="{{el.aa}}">{{el.bb}}</li>
                                 </ul>
                                 对应:
                                  define("id",function(vm){
-                                      vm.arr = [{"bb":"3323"},{"bb":"666"}]
+                                      vm.arr = [{"bb":"3323","aa":"iiijj"},{"bb":"666","aa":"8885656"}]
                                  });
+               (5)ng-click,ng-mouseover,ng-keydown,ng-blur等事件绑定，目前支持例如：
+                            <div ng-click="click()">按钮</div>
+                             对应:
+                             define("id",function(vm){
+                                 vm.click = function(){
+                                    console.log(88);
+                                 }
+                             });
 
 
           .scan(dom):dom 加载时候对节点进行自动扫描，处理数据绑定，渲染页面；
