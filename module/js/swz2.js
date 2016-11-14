@@ -12,7 +12,7 @@
         return  new SWZ.prototype.init(selector,context);
     }
     /***********javascript 底层工具函数**************/
-    SWZ.oneObject =  function (array, val) {
+    SWZ.arrayToObject =  function (array, val) {
         if (typeof array === "string") {
             array = array.match(rword) || []
         }
@@ -61,7 +61,7 @@
     tagHooks.th = tagHooks.td;
     tagHooks.optgroup = tagHooks.option;
     tagHooks.tbody = tagHooks.tfoot = tagHooks.colgroup = tagHooks.caption = tagHooks.thead;
-    var scriptTypes = SWZ.oneObject(["", "text/javascript", "text/ecmascript", "application/ecmascript", "application/javascript"]);
+    var scriptTypes = SWZ.arrayToObject(["", "text/javascript", "text/ecmascript", "application/ecmascript", "application/javascript"]);
     /*判断VML*/
     SWZ.isVML =  function (src) {
         var nodeName = src.nodeName;
@@ -618,6 +618,59 @@
         return target
     };
 
+
+    /***********事件系统****************/
+    var events = SWZ.arrayToObject("animationend,blur,change,input,click,dblclick,focus,keydown,keypress,keyup,mousedown,mouseenter,mouseleave,mousemove,mouseout,mouseover,mouseup,scan,scroll,submit");
+    SWZ.fixEvent =  function(event){
+        var ret = {};
+        for (var i in event) {
+            ret[i] = event[i];
+        }
+        var target = ret.target = event.srcElement;
+        if (event.type.indexOf("key") === 0) {
+            ret.which = event.charCode != null ? event.charCode : event.keyCode
+        } else if (rmouseEvent.test(event.type)) {
+            var doc = target.ownerDocument || DOC;
+            var box = doc.compatMode === "BackCompat" ? doc.body : doc.documentElement;
+            ret.pageX = event.clientX + (box.scrollLeft >> 0) - (box.clientLeft >> 0);
+            ret.pageY = event.clientY + (box.scrollTop >> 0) - (box.clientTop >> 0);
+            ret.wheelDeltaY = ret.wheelDelta;
+            ret.wheelDeltaX = 0
+        }
+        ret.timeStamp = new Date() - 0;
+        ret.originalEvent = event;
+        ret.preventDefault = function () { //阻止默认行为
+            event.returnValue = false
+        };
+        ret.stopPropagation = function () { //阻止事件在DOM树中的传播
+            event.cancelBubble = true
+        };
+        return ret
+    };
+
+    SWZ.bind =  function(el, type, fn, phase) {
+        var callback = W3C ? fn : function(e) {
+            fn.call(el, SWZ.fixEvent(e));
+        };
+        if (W3C) {
+            el.addEventListener(type, callback, !!phase)
+        } else {
+            el.attachEvent("on" + type, callback)
+        }
+        return callback
+    };
+    SWZ.unbind =  function(el, type, fn, phase) {
+        var callback = W3C ? fn : function(e) {
+            fn.call(el, SWZ.fixEvent(e));
+        };
+        if (W3C) {
+            el.addEventListener(type, callback, !!phase)
+        } else {
+            el.attachEvent("on" + type, callback)
+        }
+        return callback
+    };
+
     /*********扫描系统********/
     SWZ.createSignalTower = function(elem, vmodel) {
         var id = elem.getAttribute("avalonctrl") || vmodel.$id
@@ -629,7 +682,8 @@
         var vmodels = vmodel ? [].concat(vmodel) : [];
         SWZ.scanTag(elem, vmodels);
     };
-   /*扫描主要标签*/
+    var ngAttr = /ng-(\w+)-?(.*)/;
+    /*扫描主要标签*/
     SWZ.scanTag = function(elem, vmodels){
         var c = elem.getAttributeNode("ng-controller");
         var re = elem.getAttributeNode("ng-repeat");
@@ -652,6 +706,7 @@
             SWZ.scanAttr(elem, vmodels); //扫描特性节点
         }
 
+
     };
     var textRxp = /^({{)(\w+)(\.)(\w+)(}})$/g;
     /*ng-repeat 循环渲染数据实现*/
@@ -670,12 +725,26 @@
                     var repeatArr = model[j];
                     var nodeText = tag.innerHTML.trim().replace(textRxp,"$4");
                     elem.innerHTML = "";
+                    /*遍历ng-repeat数组*/
                     for(var r =0; r<repeatArr.length; r++){
-                        var newTag = tag.cloneNode();
                         var obj = repeatArr[r];
+                        var newTag = tag.cloneNode();
+                        /*绑定文本节点*/
                         for(var m in obj){
                             if(m == nodeText){
                                 newTag.innerHTML = obj[m];
+                            }
+                        }
+                        /*绑定属性节点*/
+                        var attrs = newTag.attributes;
+                        for(var m in obj){
+                            for(var i=0;i<attrs.length;i++){
+                                if(textRxp.test(attrs[i].nodeValue)){
+                                    var attrV =  attrs[i].nodeValue.trim().replace(textRxp,"$4");
+                                    if(m == attrV){
+                                        attrs[i].nodeValue = obj[m];
+                                    }
+                                }
                             }
                         }
                         elem.appendChild(newTag);
@@ -685,10 +754,32 @@
         }
 
     };
+    /*对ng 事件进行绑定*/
+    SWZ.bindNgEvent = function(elem, vmodels,attr,ngName){
+        for(var i=0;i<vmodels.length;i++){
+            var model = vmodels[i].$model;
+            for(var m in model){
+                if(m == ngName){
+                    SWZ.bind(elem,ngName,model[m]);
+                }
+            }
+        }
+    };
     /*扫描特性节点*/
     SWZ.scanAttr = function(elem, vmodels,re){
-        var stopScan = SWZ.oneObject("area,base,basefont,br,col,command,embed,hr,img,input,link,meta,param,source,track,wbr,noscript,script,style,textarea".toUpperCase());
+        if (vmodels.length) {
+            var attrs = elem.attributes;
+            for(var i=0;i<attrs.length;i++){
+                var ngName = attrs[i].name.replace(ngAttr,"$1");
+                if(events[ngName]){
+                    /*对ng 事件进行绑定*/
+                    SWZ.bindNgEvent(elem, vmodels,attrs[i],ngName);
+                }
+            }
+        }
+        var stopScan = SWZ.arrayToObject("area,base,basefont,br,col,command,embed,hr,img,input,link,meta,param,source,track,wbr,noscript,script,style,textarea".toUpperCase());
         if(!stopScan[elem.tagName]){
+            /*扫描子孙元素*/
             SWZ.scanNodeList(elem, vmodels,re);
         }
     };
