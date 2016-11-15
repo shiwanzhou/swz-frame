@@ -8,9 +8,24 @@
             Function.apply.call(console.log, console, arguments)
         }
     }
+    Function.prototype.bind = function (scope) {
+        if (arguments.length < 2 && scope === void 0)
+            return this
+        var fn = this,
+            argv = arguments
+        return function () {
+            var args = [],
+                i
+            for (i = 1; i < argv.length; i++)
+                args.push(argv[i])
+            for (i = 0; i < arguments.length; i++)
+                args.push(arguments[i])
+            return fn.apply(scope, args)
+        }
+    };
     var SWZ = function(selector, context) {
         return  new SWZ.prototype.init(selector,context);
-    }
+    };
     /***********javascript 底层工具函数**************/
     SWZ.arrayToObject =  function (array, val) {
         if (typeof array === "string") {
@@ -347,12 +362,18 @@
                 xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
                 xhr.send(params);
             }
-
+            var xhrSuccessStatus = {
+                // File protocol always yields status code 0, assume 200
+                0: 200,
+                // Support: IE <=9 only
+                // #1450: sometimes IE returns 1223 when it should be 204
+                1223: 204
+            };
             //接收第三步
             xhr.onreadystatechange = function () {
                 if (xhr.readyState == 4) {
-                    var status = xhr.status;
-                    if (status >= 200 && status < 300) {
+                    var status = xhrSuccessStatus[xhr.status] || xhr.status;
+                    if (status >= 200 && status < 300 || status === 304) {
                         var res = SWZ.parseJSON(xhr.responseText);
                         options.success && options.success(res, xhr.status);
                     } else {
@@ -756,11 +777,21 @@
     };
     /*对ng 事件进行绑定*/
     SWZ.bindNgEvent = function(elem, vmodels,attr,ngName){
+        var argsExp = /(\w+)\(([\w\$,'']+)\)$/g;
         for(var i=0;i<vmodels.length;i++){
             var model = vmodels[i].$model;
             for(var m in model){
                 if(m == ngName){
-                    SWZ.bind(elem,ngName,model[m]);
+                    var args = attr.value.replace(argsExp,"$2").replace(/['']+/g,"");
+                    if(args.split(",")){
+                        var callback = function(e) {
+                            var fn = model[m];
+                            return fn.apply(this, args.split(",").concat(e));
+                        };
+                        SWZ.bind(elem,ngName,callback);
+                    }else{
+                        SWZ.bind(elem,ngName,model[m]);
+                    }
                 }
             }
         }
