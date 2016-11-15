@@ -796,6 +796,40 @@
             }
         }
     };
+    /*对Object.defineProperty() 重写*/
+    SWZ.defineProperty = function(obj,name,getCallback,setCallback){
+      return  Object.defineProperty(obj, name, {
+            get:getCallback,
+            set:setCallback
+        })
+    };
+    /*对 input 标签进行双工绑定*/
+    SWZ.duplex =  function(elem, vmodels,attr,ngName){
+        for(var i=0;i<vmodels.length;i++){
+            var model = vmodels[i].$model;
+            for(var m in model){
+                /*ng-duplex 双工绑定*/
+                if(m == attr.nodeValue){
+                    elem.value = model[m];
+                    SWZ.defineProperty(vmodels[i].$model, m, function(){
+                        return elem.value;
+                    },function(){
+                        elem.value = model[m];
+                    });
+                }
+                /*回调函数传递*/
+                if( elem.getAttribute("data-duplex-changed") && (elem.getAttribute("data-duplex-changed") == m)){
+                    var fn = model[m];
+                    var callback = function(e) {
+                        console.log(vmodels);
+                        return fn.call(this, elem.value);
+                    };
+                    SWZ.bind(elem,"input",callback);
+                }
+            }
+        }
+
+    };
     /*扫描特性节点*/
     SWZ.scanAttr = function(elem, vmodels,re){
         if (vmodels.length) {
@@ -805,6 +839,10 @@
                 if(events[ngName]){
                     /*对ng 事件进行绑定*/
                     SWZ.bindNgEvent(elem, vmodels,attrs[i],ngName);
+                }
+                if(ngName === "duplex"){
+                    /*双工绑定*/
+                    SWZ.duplex(elem, vmodels,attrs[i],ngName);
                 }
             }
         }

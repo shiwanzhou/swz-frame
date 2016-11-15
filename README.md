@@ -80,7 +80,15 @@
                                     console.log(88);
                                  }
                              });
-
+               (6)ng-duplex,data-duplex-changed 指令实现， 目前支持例如：
+                           <input ng-duplex="username" data-duplex-changed="callback">
+                            对应:
+                            define("id",function(vm){
+                                 vm.callback = function(val){
+                                    console.log(val);
+                                 }
+                                 vm.username = "fff";
+                             });
 
           .scan(dom):dom 加载时候对节点进行自动扫描，处理数据绑定，渲染页面；
 
