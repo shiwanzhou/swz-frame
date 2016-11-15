@@ -821,7 +821,6 @@
                 if( elem.getAttribute("data-duplex-changed") && (elem.getAttribute("data-duplex-changed") == m)){
                     var fn = model[m];
                     var callback = function(e) {
-                        console.log(vmodels);
                         return fn.call(this, elem.value);
                     };
                     SWZ.bind(elem,"input",callback);
