@@ -395,6 +395,7 @@
             var val = source[name];
             $model[name] = val;
         });
+        $model["fff"] = "334";
         return $model;
     };
     /*模块定义函数*/
@@ -407,12 +408,18 @@
         }
         var scope = {};
         factory(scope); //得到所有定义
-       var model = SWZ.modelFactory(scope);
+       SWZ.vmodel = SWZ.modelFactory(scope);
        VMODELS.$id = $id;
-       VMODELS.$model = model;
-       VMODELS.data = model.data;
+       VMODELS.$model =  SWZ.vmodel;
+       VMODELS.data =  SWZ.vmodel.data;
        SWZ.vmodels = VMODELS;
-       return VMODELS;
+       factory(SWZ.vmodel);
+       SWZ.defineProperty(SWZ.vmodels,"$model",function(){
+            return   SWZ.vmodel;
+        },function(){
+            $model = SWZ.vmodels.$model;
+        });
+        return  SWZ.vmodels;
     };
 
     /*检测 DOM 结构是否加载完成*/
@@ -821,6 +828,7 @@
                 if( elem.getAttribute("data-duplex-changed") && (elem.getAttribute("data-duplex-changed") == m)){
                     var fn = model[m];
                     var callback = function(e) {
+                        SWZ.vmodel = model;
                         return fn.call(this, elem.value);
                     };
                     SWZ.bind(elem,"input",callback);
