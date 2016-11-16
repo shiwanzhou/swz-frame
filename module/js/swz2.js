@@ -698,6 +698,11 @@
         }
         return callback
     };
+    /*监听事件*/
+    SWZ.$watch = function(){
+
+
+    };
 
     /*********扫描系统********/
     SWZ.createSignalTower = function(elem, vmodel) {
@@ -837,6 +842,21 @@
         }
 
     };
+    /*显示隐藏指令*/
+    SWZ.visible = function(elem, vmodels,attr,ngName){
+        for(var i=0;i<vmodels.length;i++){
+            var model = vmodels[i].$model;
+            for(var m in model){
+                if(m == attr.nodeValue){
+                     if(model[m]){
+                         elem.style.display = "block";
+                     }else{
+                         elem.style.display = "none";
+                    }
+                }
+            }
+        }
+    };
     /*扫描特性节点*/
     SWZ.scanAttr = function(elem, vmodels,re){
         if (vmodels.length) {
@@ -850,6 +870,10 @@
                 if(ngName === "duplex"){
                     /*双工绑定*/
                     SWZ.duplex(elem, vmodels,attrs[i],ngName);
+                }
+                if(ngName === "visible"){
+                    /*显示隐藏指令*/
+                    SWZ.visible(elem, vmodels,attrs[i],ngName);
                 }
             }
         }
