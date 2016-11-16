@@ -796,8 +796,8 @@
                 if(m == ngName){
                     var args = attr.value.replace(argsExp,"$2").replace(/['']+/g,"");
                     if(args.split(",")){
+                        var fn = model[m];
                         var callback = function(e) {
-                            var fn = model[m];
                             return fn.apply(this, args.split(",").concat(e));
                         };
                         SWZ.bind(elem,ngName,callback);
