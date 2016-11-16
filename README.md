@@ -86,6 +86,7 @@
                             define("id",function(vm){
                                  vm.callback = function(val){
                                     console.log(val);
+                                    console.log(vm);//input 值更改了vm 自动更新，视图更改后model 自动更新，实现联动；
                                  }
                                  vm.username = "fff";
                              });
