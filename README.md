@@ -90,6 +90,12 @@
                                  }
                                  vm.username = "fff";
                              });
+               (7)ng-visible 显示隐藏元素实现,目前支持例如：
+                           <div ng-visible="isShow"></div>
+                            对应:
+                            define("id",function(vm){
+                                 vm.isShow = true;
+                             });
 
           .scan(dom):dom 加载时候对节点进行自动扫描，处理数据绑定，渲染页面；
 
