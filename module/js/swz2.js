@@ -318,9 +318,11 @@
             oHead.removeChild(oS);
             clearTimeout(oS.timer);
             window[callbackName] = null;
-            options.success && options.success(json);
+            if(json){
+                var res = SWZ.parseJSON(json);
+                options.success && options.success(res);
+            }
         };
-
         //发送请求
         oS.src = options.url + '?' + params;
 
@@ -336,51 +338,55 @@
 
     /*ajax 封装*/
     SWZ.ajax = function(options){
-            options = options || {};
-            options.type = (options.type || "GET").toUpperCase();
-            options.dataType = options.dataType || "json";
-            if(options.dataType === "jsonp" ){
-                SWZ.jsonp(options);
-                return;
-            }
-            var params = SWZ.formatParams(options.data);
+        options = options || {};
+        options.type = (options.type || "GET").toUpperCase();
+        options.dataType = options.dataType || "json";
+        if(options.dataType === "jsonp" ){
+            SWZ.jsonp(options);
+            return;
+        }
+        var params = SWZ.formatParams(options.data);
 
-            //创建 - 非IE6
-            if (window.XMLHttpRequest) {
-                var xhr = new XMLHttpRequest();
-            } else { //IE6及其以下版本浏览器
-                var xhr = new ActiveXObject('Microsoft.XMLHTTP');
-            }
+        //创建 - 非IE6
+        if (window.XMLHttpRequest) {
+            var xhr = new XMLHttpRequest();
+        } else { //IE6及其以下版本浏览器
+            var xhr = new ActiveXObject('Microsoft.XMLHTTP');
+        }
 
-            //连接和发送
-            if (options.type == "GET") {
-                xhr.open("GET", options.url + "?" + params, true);
-                xhr.send(null);
-            } else if (options.type == "POST") {
-                xhr.open("POST", options.url, true);
-                //设置表单提交时的内容类型
-                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-                xhr.send(params);
-            }
-            var xhrSuccessStatus = {
-                // File protocol always yields status code 0, assume 200
-                0: 200,
-                // Support: IE <=9 only
-                // #1450: sometimes IE returns 1223 when it should be 204
-                1223: 204
-            };
-            //接收第三步
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState == 4) {
-                    var status = xhrSuccessStatus[xhr.status] || xhr.status;
-                    if (status >= 200 && status < 300 || status === 304) {
-                        var res = SWZ.parseJSON(xhr.responseText);
-                        options.success && options.success(res, xhr.status);
-                    } else {
-                        options.fail && options.fail(xhr.responseText,xhr.status);
-                    }
+        //连接和发送
+        if (options.type == "GET") {
+            xhr.open("GET", options.url + "?" + params, true);
+            xhr.send(null);
+        } else if (options.type == "POST") {
+            xhr.open("POST", options.url, true);
+            //设置表单提交时的内容类型
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.send(params);
+        }
+        var xhrSuccessStatus = {
+            // File protocol always yields status code 0, assume 200
+            // Support: IE <=9 only
+            // #1450: sometimes IE returns 1223 when it should be 204
+            1223: 204
+        };
+        //接收第三步
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4) {
+                console.log(xhr.status);
+                var status = xhrSuccessStatus[xhr.status] || xhr.status;
+                if (status >= 200 && status < 300 || status === 304) {
+                    var res = SWZ.parseJSON(xhr.responseText);
+                    options.success && options.success(res, xhr.status);
+                } else {
+                    var message = {
+                        statusText : "error!",
+                        status: xhr.status
+                    };
+                    options.fail && options.fail(message,xhr.status);
                 }
-            };
+            }
+        };
 
     };
     /*得到工厂model*/
@@ -417,7 +423,7 @@
        SWZ.defineProperty(SWZ.vmodels,"$model",function(){
             return   SWZ.vmodel;
         },function(){
-            $model = SWZ.vmodels.$model;
+            $model = SWZ.vmodel;
         });
         return  SWZ.vmodels;
     };
