@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <meta charset="utf-8"/>
+    <style>
+        .ms-controller,.ms-important,[ms-controller],[ms-important]{
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<div ng-controller="aa" >
+    <div>
+       {{data}}
+    </div>
+    <ul ng-repeat="arr">
+        <li  class="{{el.bb}}" uuu="{{el.uuu}}">{{el.aa}}</li>
+    </ul>
+    <div ng-click="click($event,234)" id="ttt">点击</div>
+
+    <input ng-duplex="username" data-duplex-changed="callback">
+
+    <div ng-visible="isShow">数据数据数据</div>
+</div>
+
+
+<script src="js/swz2.js"></script>
+<script type="text/javascript">
+    //$("#yy").attr("uuu","7777")
+    var uu = "<em>ggggggggggg</em>";
+    //$("#yy").append(uu)
+
+    var uu =  $.define("aa",function(vm){
+        console.log(vm)
+        vm.data = "fff";
+        vm.eee = "fggg";
+        vm.arr = [{"aa":"233","bb":"345","uuu":"cfvf"},{"aa":"4444444","bb":"7777777777","uuu":"9999999"}];
+        vm.username = "888hjjj";
+        vm.isShow = false;
+        vm.callback = function(val){
+             console.log(vm)
+
+        };
+        vm.click = function(e,num){
+            var param = {"aa":"11"};
+            $.ajax({
+               url:"http://127.0.0.1:1338/",
+               type:"get",
+               dataType:"jsonp",
+               data:param,
+               success:function(res){
+                   console.log( res)
+               },
+               fail:function(res){
+                   console.log(res)
+               }
+            });
+        }
+     });
+
+</script>
+</body>
+</html>
