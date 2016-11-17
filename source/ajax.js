@@ -24,7 +24,7 @@ var server=http.createServer(function(req,res){
              */
             req.addListener("end", function () {
                 var query = qs.parse(postData);
-                console.log(query)
+                str = '{"state":"success"}';
             });
         }
         else if (req.method.toUpperCase() == 'GET') {
@@ -41,7 +41,6 @@ var server=http.createServer(function(req,res){
                 console.log(str);
                 res.end(str);
             } else {
-                console.log(222);
                 res.end(str);//普通的json
             }
            /* var query = qs.parse(url.parse(req.url).query);

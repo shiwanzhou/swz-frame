@@ -805,6 +805,7 @@
                     if(args.split(",")){
                         var fn = model[m];
                         var callback = function(e) {
+                            console.log(fn)
                             return fn.apply(this, args.split(",").concat(e));
                         };
                         SWZ.bind(elem,ngName,callback);
