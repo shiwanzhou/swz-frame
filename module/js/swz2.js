@@ -805,7 +805,7 @@
     };
     /*对ng 事件进行绑定*/
     SWZ.bindNgEvent = function(elem, vmodels,attr,ngName){
-        var argsExp = /(\w+)\(([\w\$,'']+)\)$/g;
+        var argsExp = /(\w+)\(([\w\$\s,'']*)\)$/g;
         for(var i=0;i<vmodels.length;i++){
             var model = vmodels[i].$model;
             for(var m in model){
