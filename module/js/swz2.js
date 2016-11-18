@@ -134,8 +134,18 @@
             return NaN
         }
     };
-    /**/
-    SWZ.type = function (obj) { //取得目标的类型
+    /*比较两个值是否相等*/
+    SWZ.isEqual = Object.is || function (v1, v2) {
+        if (v1 === 0 && v2 === 0) {
+            return 1 / v1 === 1 / v2
+        } else if (v1 !== v1) {
+            return v2 !== v2
+        } else {
+            return v1 === v2
+        }
+    };
+    /*取得目标的类型*/
+    SWZ.type = function (obj) {
         if (obj == null) {
             return String(obj)
         }
@@ -799,12 +809,15 @@
         for(var i=0;i<vmodels.length;i++){
             var model = vmodels[i].$model;
             for(var m in model){
-                if(m == ngName){
+                var bindName = attr.value.replace(argsExp,"$1");
+                if(m == bindName){
                     var args = attr.value.replace(argsExp,"$2").replace(/['']+/g,"");
                     if(args.split(",")){
                         var fn = model[m];
                         var callback = function(e) {
-                            return fn.apply(this, args.split(",").concat(e));
+                            fn.apply(this, args.split(",").concat(e));
+                            /*重新扫描节点*/
+                            SWZ.scan(DOC.body,SWZ.vmodels);
                         };
                         SWZ.bind(elem,ngName,callback);
                     }else{
