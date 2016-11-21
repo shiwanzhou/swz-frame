@@ -777,7 +777,13 @@
             return this.innerHTML;
         },
         text:function(){
-           return this.textContent;
+          var text = "";
+          if(this.textContent){
+              text = this.textContent;
+          }else{
+              text = this.innerText;
+          }
+           return text;
         },
         attr:function(name,value){
             if (arguments.length === 2) {
