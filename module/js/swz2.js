@@ -455,7 +455,6 @@
             var val = source[name];
             $model[name] = val;
         }
-        $model["fff"] = "334";
         return $model;
     };
     /*模块定义函数*/
@@ -749,13 +748,13 @@
     SWZ.fn =  SWZ.prototype = {
         init: function( selector, context, rootjQuery ) {
             var that = this;
-            /*    id选择器*/
+            /* id选择器*/
             var re = /^#/;
             if(re.test(selector)){
                 if(document.querySelector){
                     that =  document.querySelector(selector);
                 }else{
-                    that =   document.getElementById(selector);
+                    that =   document.getElementById(selector.replace("#",""));
                 }
             }else if(selector === document){
                 that.ready = SWZ.ready;
@@ -876,6 +875,7 @@
     /***********事件系统****************/
     var rmouseEvent = /^(?:mouse|contextmenu|drag)|click/;
     var events = SWZ.arrayToObject("animationend,blur,change,input,click,dblclick,focus,keydown,keypress,keyup,mousedown,mouseenter,mouseleave,mousemove,mouseout,mouseover,mouseup,scan,scroll,submit");
+    SWZ.binding = false;
     SWZ.fixEvent =  function(event){
         var ret = {};
         for (var i in event) {
@@ -963,7 +963,6 @@
             if(!SWZ.binding){
                 SWZ.scanRepeat(elem,vmodels,re);
             }
-
         }else{
             SWZ.scanAttr(elem, vmodels); //扫描特性节点
         }
@@ -1045,8 +1044,8 @@
                         var callback = function(e) {
                             fn.apply(this);
                             /*重新扫描节点*/
-                            SWZ.binding = true;
                             SWZ.scan(DOC.body,SWZ.vmodels);
+                            SWZ.binding = true;
                         };
                         SWZ.bind(elem,ngName,callback);
                     }
@@ -1132,9 +1131,6 @@
                 var ngName = attrs[i].name.replace(ngAttr,"$1");
                 if(events[ngName]){
                     /*对ng 事件进行绑定*/
-                    if(!SWZ.binding){
-                        SWZ.binding = false;
-                    }
                     SWZ.bindNgEvent(elem, vmodels,attrs[i],ngName);
                 }
                 if(ngName === "duplex"){
