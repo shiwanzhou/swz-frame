@@ -1020,12 +1020,12 @@
                 var bindName = attr.value.replace(argsExp,"$1");
                 if(m == bindName){
                     var args = attr.value.replace(argsExp,"$2").replace(/['']+/g,"");
-                    if(args.split(",")){
+                    if(args.split(",").length>1){
                         var fn = model[m];
                         var callback = function(e) {
-                            fn.apply(this, args.split(",").concat(e));
+                           return fn.apply(this, args.split(",").concat(e));
                             /*重新扫描节点*/
-                            SWZ.scan(DOC.body,SWZ.vmodels);
+                           // SWZ.scan(DOC.body,SWZ.vmodels);
                         };
                         SWZ.bind(elem,ngName,callback);
                     }else{
