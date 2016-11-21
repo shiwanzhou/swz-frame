@@ -27,6 +27,50 @@
         return  new SWZ.prototype.init(selector,context);
     };
     /***********javascript 底层工具函数**************/
+    var hasDontEnumBug = !({
+            'toString': null
+        }).propertyIsEnumerable('toString'),
+        hasProtoEnumBug = (function () {
+        }).propertyIsEnumerable('prototype'),
+        dontEnums = [
+            "toString",
+            "toLocaleString",
+            "valueOf",
+            "hasOwnProperty",
+            "isPrototypeOf",
+            "propertyIsEnumerable",
+            "constructor"
+        ],
+        dontEnumsLength = dontEnums.length;
+    if (!Object.keys) {
+        Object.keys = function (object) { //ecma262v5 15.2.3.14
+            var theKeys = []
+            var skipProto = hasProtoEnumBug && typeof object === "function"
+            if (typeof object === "string" || (object && object.callee)) {
+                for (var i = 0; i < object.length; ++i) {
+                    theKeys.push(String(i))
+                }
+            } else {
+                for (var name in object) {
+                    if (!(skipProto && name === "prototype") && ohasOwn.call(object, name)) {
+                        theKeys.push(String(name))
+                    }
+                }
+            }
+
+            if (hasDontEnumBug) {
+                var ctor = object.constructor,
+                    skipConstructor = ctor && ctor.prototype === object
+                for (var j = 0; j < dontEnumsLength; j++) {
+                    var dontEnum = dontEnums[j]
+                    if (!(skipConstructor && dontEnum === "constructor") && ohasOwn.call(object, dontEnum)) {
+                        theKeys.push(dontEnum)
+                    }
+                }
+            }
+            return theKeys
+        }
+    }
     SWZ.arrayToObject =  function (array, val) {
         if (typeof array === "string") {
             array = array.match(rword) || []
@@ -407,10 +451,10 @@
         var names = Object.keys(source);
         /* jshint ignore:start */
         var $model = {};
-        names.forEach(function (name, accessor) {
+        for(var i=0;i<names.length;i++){
             var val = source[name];
             $model[name] = val;
-        });
+        }
         $model["fff"] = "334";
         return $model;
     };
@@ -479,7 +523,228 @@
             }
         }
     };
+    /********SWZ扩展************/
+    SWZ.extend  = function () {
+        var options, name, src, copy, copyIsArray, clone,
+            target = arguments[0] || {},
+            i = 1,
+            length = arguments.length,
+            deep = false
 
+        // 如果第一个参数为布尔,判定是否深拷贝
+        if (typeof target === "boolean") {
+            deep = target
+            target = arguments[1] || {}
+            i++
+        }
+
+        //确保接受方为一个复杂的数据类型
+        if (typeof target !== "object" && !SWZ.isFunction(target)) {
+            target = {}
+        }
+
+        //如果只有一个参数，那么新成员添加于extend所在的对象上
+        if (i === length) {
+            target = this;
+            i--
+        }
+
+        for (; i < length; i++) {
+            //只处理非空参数
+            if ((options = arguments[i]) != null) {
+                for (name in options) {
+                    src = target[name]
+                    try {
+                        copy = options[name] //当options为VBS对象时报错
+                    } catch (e) {
+                        continue
+                    }
+
+                    // 防止环引用
+                    if (target === copy) {
+                        continue
+                    }
+                    if (deep && copy && (SWZ.isPlainObject(copy) || (copyIsArray = SWZ.isArray(copy)))) {
+
+                        if (copyIsArray) {
+                            copyIsArray = false
+                            clone = src && SWZ.isArray(src) ? src : []
+
+                        } else {
+                            clone = src && SWZ.isPlainObject(src) ? src : {}
+                        }
+
+                        target[name] = SWZ.extend(deep, clone, copy)
+                    } else if (copy !== void 0) {
+                        target[name] = copy
+                    }
+                }
+            }
+        }
+        return target
+    };
+    /*封装对数组操作*/
+    var rnative = /\[native code\]/; //判定是否原生函数
+    function iterator(vars, body, ret) {
+        var fun = 'for(var ' + vars + 'i=0,n = this.length; i < n; i++){' + body.replace('_', '((i in this) && fn.call(scope,this[i],i,this))') + '}' + ret
+        return Function("fn,scope", fun)
+    }
+    var generateID = function (prefix) {
+        prefix = prefix || "SWZ";
+        return String(Math.random() + Math.random()).replace(/\d\.\d{4}/, prefix)
+    };
+    if (!rnative.test([].map)) {
+        SWZ.extend(ap, {
+            //定位操作，返回数组中第一个等于给定参数的元素的索引值。
+            indexOf: function (item, index) {
+                var n = this.length,
+                    i = ~~index
+                if (i < 0)
+                    i += n
+                for (; i < n; i++)
+                    if (this[i] === item)
+                        return i
+                return -1
+            },
+            //定位操作，同上，不过是从后遍历。
+            lastIndexOf: function (item, index) {
+                var n = this.length,
+                    i = index == null ? n - 1 : index
+                if (i < 0)
+                    i = Math.max(0, n + i)
+                for (; i >= 0; i--)
+                    if (this[i] === item)
+                        return i
+                return -1
+            },
+            //迭代操作，将数组的元素挨个儿传入一个函数中执行。Prototype.js的对应名字为each。
+            forEach: iterator("", '_', ""),
+            //迭代类 在数组中的每个项上运行一个函数，如果此函数的值为真，则此元素作为新数组的元素收集起来，并返回新数组
+            filter: iterator('r=[],j=0,', 'if(_)r[j++]=this[i]', 'return r'),
+            //收集操作，将数组的元素挨个儿传入一个函数中执行，然后把它们的返回值组成一个新数组返回。Prototype.js的对应名字为collect。
+            map: iterator('r=[],', 'r[i]=_', 'return r'),
+            //只要数组中有一个元素满足条件（放进给定函数返回true），那么它就返回true。Prototype.js的对应名字为any。
+            some: iterator("", 'if(_)return true', 'return false'),
+            //只有数组中的元素都满足条件（放进给定函数返回true），它才返回true。Prototype.js的对应名字为all。
+            every: iterator("", 'if(!_)return false', 'return true')
+        })
+    }
+//===================修复浏览器对Object.defineProperties的支持=================
+    //一些不需要被监听的属性
+    var expose = new Date() - 0;
+    var $$skipArray = String("$id,$watch,$unwatch,$fire,$events,$model,$skipArray,$reinitialize").match(rword);
+    var defineProperty = Object.defineProperty;
+    var canHideOwn = true;
+    //如果浏览器不支持ecma262v5的Object.defineProperties或者存在BUG，比如IE8
+    //标准浏览器使用__defineGetter__, __defineSetter__实现
+    try {
+        defineProperty({}, "_", {
+            value: "x"
+        })
+        var defineProperties = Object.defineProperties
+    } catch (e) {
+        canHideOwn = false
+    }
+    if (!canHideOwn) {
+        if ("__defineGetter__" in SWZ) {
+            defineProperty = function (obj, prop, desc) {
+                if ('value' in desc) {
+                    obj[prop] = desc.value
+                }
+                if ("get" in desc) {
+                    obj.__defineGetter__(prop, desc.get)
+                }
+                if ('set' in desc) {
+                    obj.__defineSetter__(prop, desc.set)
+                }
+                return obj
+            }
+            defineProperties = function (obj, descs) {
+                for (var prop in descs) {
+                    if (descs.hasOwnProperty(prop)) {
+                        defineProperty(obj, prop, descs[prop])
+                    }
+                }
+                return obj
+            }
+        }
+        if (SWZ.IEVersion()) {
+            var VBClassPool = {}
+            window.execScript([// jshint ignore:line
+                "Function parseVB(code)",
+                "\tExecuteGlobal(code)",
+                "End Function" //转换一段文本为VB代码
+            ].join("\n"), "VBScript")
+            function VBMediator(instance, accessors, name, value) {// jshint ignore:line
+                var accessor = accessors[name]
+                if (arguments.length === 4) {
+                    accessor.call(instance, value)
+                } else {
+                    return accessor.call(instance)
+                }
+            }
+            defineProperties = function (name, accessors, properties) {
+                // jshint ignore:line
+                var buffer = []
+                buffer.push(
+                    "\r\n\tPrivate [__data__], [__proxy__]",
+                    "\tPublic Default Function [__const__](d"+expose+", p"+expose+")",
+                    "\t\tSet [__data__] = d"+expose+": set [__proxy__] = p"+expose,
+                    "\t\tSet [__const__] = Me", //链式调用
+                    "\tEnd Function")
+                //添加普通属性,因为VBScript对象不能像JS那样随意增删属性，必须在这里预先定义好
+                for (name in properties) {
+                    if (!accessors.hasOwnProperty(name)) {
+                        buffer.push("\tPublic [" + name + "]")
+                    }
+                }
+                $$skipArray.forEach(function (name) {
+                    if (!accessors.hasOwnProperty(name)) {
+                        buffer.push("\tPublic [" + name + "]")
+                    }
+                });
+                buffer.push("\tPublic [" + 'hasOwnProperty' + "]")
+                //添加访问器属性
+                for (name in accessors) {
+                    buffer.push(
+                        //由于不知对方会传入什么,因此set, let都用上
+                        "\tPublic Property Let [" + name + "](val" + expose + ")", //setter
+                        "\t\tCall [__proxy__](Me,[__data__], \"" + name + "\", val" + expose + ")",
+                        "\tEnd Property",
+                        "\tPublic Property Set [" + name + "](val" + expose + ")", //setter
+                        "\t\tCall [__proxy__](Me,[__data__], \"" + name + "\", val" + expose + ")",
+                        "\tEnd Property",
+                        "\tPublic Property Get [" + name + "]", //getter
+                        "\tOn Error Resume Next", //必须优先使用set语句,否则它会误将数组当字符串返回
+                        "\t\tSet[" + name + "] = [__proxy__](Me,[__data__],\"" + name + "\")",
+                        "\tIf Err.Number <> 0 Then",
+                        "\t\t[" + name + "] = [__proxy__](Me,[__data__],\"" + name + "\")",
+                        "\tEnd If",
+                        "\tOn Error Goto 0",
+                        "\tEnd Property")
+
+                }
+
+                buffer.push("End Class")
+                var body = buffer.join("\r\n")
+                var className =VBClassPool[body]
+                if (!className) {
+                    className = generateID("VBClass")
+                    window.parseVB("Class " + className + body)
+                    window.parseVB([
+                        "Function " + className + "Factory(a, b)", //创建实例并传入两个关键的参数
+                        "\tDim o",
+                        "\tSet o = (New " + className + ")(a, b)",
+                        "\tSet " + className + "Factory = o",
+                        "End Function"
+                    ].join("\r\n"))
+                    VBClassPool[body] = className
+                }
+                var ret = window[className + "Factory"](accessors, VBMediator) //得到其产品
+                return ret //得到其产品
+            }
+        }
+    }
     /***********主方法**************/
     SWZ.fn =  SWZ.prototype = {
         init: function( selector, context, rootjQuery ) {
@@ -601,69 +866,9 @@
         }
 
     };
-    /********SWZ扩展************/
-    SWZ.extend = SWZ.fn.extend = function () {
-        var options, name, src, copy, copyIsArray, clone,
-            target = arguments[0] || {},
-            i = 1,
-            length = arguments.length,
-            deep = false
-
-        // 如果第一个参数为布尔,判定是否深拷贝
-        if (typeof target === "boolean") {
-            deep = target
-            target = arguments[1] || {}
-            i++
-        }
-
-        //确保接受方为一个复杂的数据类型
-        if (typeof target !== "object" && !SWZ.isFunction(target)) {
-            target = {}
-        }
-
-        //如果只有一个参数，那么新成员添加于extend所在的对象上
-        if (i === length) {
-            target = this;
-            i--
-        }
-
-        for (; i < length; i++) {
-            //只处理非空参数
-            if ((options = arguments[i]) != null) {
-                for (name in options) {
-                    src = target[name]
-                    try {
-                        copy = options[name] //当options为VBS对象时报错
-                    } catch (e) {
-                        continue
-                    }
-
-                    // 防止环引用
-                    if (target === copy) {
-                        continue
-                    }
-                    if (deep && copy && (SWZ.isPlainObject(copy) || (copyIsArray = SWZ.isArray(copy)))) {
-
-                        if (copyIsArray) {
-                            copyIsArray = false
-                            clone = src && SWZ.isArray(src) ? src : []
-
-                        } else {
-                            clone = src && SWZ.isPlainObject(src) ? src : {}
-                        }
-
-                        target[name] = SWZ.extend(deep, clone, copy)
-                    } else if (copy !== void 0) {
-                        target[name] = copy
-                    }
-                }
-            }
-        }
-        return target
-    };
-
 
     /***********事件系统****************/
+    var rmouseEvent = /^(?:mouse|contextmenu|drag)|click/;
     var events = SWZ.arrayToObject("animationend,blur,change,input,click,dblclick,focus,keydown,keypress,keyup,mousedown,mouseenter,mouseleave,mousemove,mouseout,mouseover,mouseup,scan,scroll,submit");
     SWZ.fixEvent =  function(event){
         var ret = {};
@@ -761,7 +966,7 @@
     /*ng-repeat 循环渲染数据实现*/
     SWZ.scanRepeat = function(elem,vmodels,re){
         var nodes = elem.childNodes;
-        var tag;
+        var tag, nodeText;
         for(var i=0;i<nodes.length;i++){
             if(nodes[i].nodeType === 1){
                 tag = nodes[i];
@@ -772,7 +977,10 @@
             for(var j in model){
                 if(SWZ.isArray(model[j])){
                     var repeatArr = model[j];
-                    var nodeText = tag.innerHTML.trim().replace(textRxp,"$4");
+                    var tagHtml = tag.innerHTML.trim();
+                    if(textRxp.test(tagHtml)){
+                        nodeText = tagHtml.replace(textRxp,"$4");
+                    }
                     elem.innerHTML = "";
                     /*遍历ng-repeat数组*/
                     for(var r =0; r<repeatArr.length; r++){
@@ -796,12 +1004,12 @@
                                 }
                             }
                         }
+                        //console.log(newTag)
                         elem.appendChild(newTag);
                      }
                 }
             }
         }
-
     };
     /*对ng 事件进行绑定*/
     SWZ.bindNgEvent = function(elem, vmodels,attr,ngName){
@@ -829,10 +1037,31 @@
     };
     /*对Object.defineProperty() 重写*/
     SWZ.defineProperty = function(obj,name,getCallback,setCallback){
-      return  Object.defineProperty(obj, name, {
-            get:getCallback,
-            set:setCallback
-        })
+         if(Object.defineProperty){
+             if(SWZ.IEVersion()){
+                 if(SWZ.IEVersion()>=9){
+                     return  Object.defineProperty(obj,name,{
+                         get:getCallback,
+                         set:setCallback
+                     })
+                 }else{
+                     return  defineProperties( name,obj,{
+                         get:getCallback,
+                         set:setCallback
+                     })
+                 }
+             }else{
+                 return  Object.defineProperty(obj,name,{
+                     get:getCallback,
+                     set:setCallback
+                 })
+             }
+         }else{
+             return  defineProperties( name,obj,{
+                 get:getCallback,
+                 set:setCallback
+             })
+         }
     };
     /*对 input 标签进行双工绑定*/
     SWZ.duplex =  function(elem, vmodels,attr,ngName){
