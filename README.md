@@ -98,10 +98,10 @@
                             define("id",function(vm){
                                  vm.isShow = true;
                                  vm.tab = function(){
-                                     vm.isShow = false;
+                                     vm.isShow = false; //目前有bug
                                  }
                                   vm.show = function(){
-                                      vm.isShow = true;
+                                      vm.isShow = true; //目前有bug
                                    }
                              });
 
@@ -109,7 +109,7 @@
 
      (5).兼容性：01.目前核心功能兼容到火狐3.5+，IE7,8,9,10,11,chrome4+, opera11+, safari5+, 360安全浏览器5.0+等；
 
-                 02.dom操作api 兼容到IE8及IE8+;
+                 02.dom操作api 兼容到IE7,IE8及IE8+;
 
 
 
