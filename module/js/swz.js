@@ -2,7 +2,6 @@
 
 
 (function(w,u){
-
     w.swz = function(){};
     var objectP = Object.prototype;
     var ohasOwn = objectP.hasOwnProperty;
