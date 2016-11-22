@@ -875,7 +875,6 @@
     /***********事件系统****************/
     var rmouseEvent = /^(?:mouse|contextmenu|drag)|click/;
     var events = SWZ.arrayToObject("animationend,blur,change,input,click,dblclick,focus,keydown,keypress,keyup,mousedown,mouseenter,mouseleave,mousemove,mouseout,mouseover,mouseup,scan,scroll,submit");
-    SWZ.binding = false;
     SWZ.fixEvent =  function(event){
         var ret = {};
         for (var i in event) {
@@ -1047,7 +1046,7 @@
                             SWZ.scan(DOC.body,SWZ.vmodels);
                             SWZ.binding = true;
                         };
-                        SWZ.bind(elem,ngName,callback);
+                        SWZ.bind(elem,ngName,fn);
                     }
                 }
             }
