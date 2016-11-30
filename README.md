@@ -63,7 +63,14 @@
          .define("id",function(vm){vm.data = "fff"})：
               (1)定义模块，绑定数据；
               (2)ng-controller指令，例如<div ng-controller="aa"></div>,对应模块中id名字；
-              (3)data对应页面中的{{data}},实现单向数据绑定,目前支持当个单个多个{{data}}标签，前提是ng-controller存在；
+              (3)data对应页面中的{{data}},实现单向数据绑定,目前支持当个单个多个{{data}}标签，支持多行或者单行比如：
+                               <div>{{data}}--{{data2}}--{{data3}}</div>
+                                 对应:
+                                define("id",function(vm){
+                                     vm.data = "111";
+                                     vm.data2 = "222";
+                                     vm.data3 = "333";
+                                });
               (4)ng-repeat指令，目前支持例如：
                                 <ul ng-repeat="arr">
                                    <li class="{{el.aa}}">{{el.bb}}</li>
