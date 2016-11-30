@@ -968,7 +968,7 @@
 
 
     };
-    var textRxp = /^({{)(\w+)(\.)(\w+)(}})$/g;
+    var textRxp = /({{)(\w+)(\.)(\w+)(}})/g;
     /*ng-repeat 循环渲染数据实现*/
     SWZ.scanRepeat = function(elem,vmodels,re){
         var nodes = elem.childNodes;
@@ -984,18 +984,31 @@
                 if(SWZ.isArray(model[j])){
                     var repeatArr = model[j];
                     var tagHtml = tag.innerHTML.trim();
-                    if(textRxp.test(tagHtml)){
-                        nodeText = tagHtml.replace(textRxp,"$4");
-                    }
                     elem.innerHTML = "";
                     /*遍历ng-repeat数组*/
                     for(var r =0; r<repeatArr.length; r++){
                         var obj = repeatArr[r];
                         var newTag = tag.cloneNode();
                         /*绑定文本节点*/
-                        for(var m in obj){
-                            if(m == nodeText){
-                                newTag.innerHTML = obj[m];
+                        if(textRxp.test(tagHtml)){
+                            var hmatch = tagHtml.match(textRxp)||[];
+                            if(hmatch.length>1){
+                                for(var k=0;k<hmatch.length;k++){
+                                    nodeText = hmatch[k].replace(textRxp,"$4");
+                                    for(var m in obj){
+                                        if(m == nodeText){
+                                            hmatch[k] = obj[m];
+                                        }
+                                    }
+                                }
+                                console.log(tagHtml)
+                            }else{
+                                nodeText = tagHtml.replace(textRxp,"$4");
+                                for(var m in obj){
+                                    if(m == nodeText){
+                                        newTag.innerHTML = obj[m];
+                                    }
+                                }
                             }
                         }
                         /*绑定属性节点*/
@@ -1003,12 +1016,12 @@
                         for(var m in obj){
                             for(var i=0;i<attrs.length;i++){
                                 if(textRxp.test(attrs[i].nodeValue)){
-                                    var attrV =  attrs[i].nodeValue.trim().replace(textRxp,"$4");
-                                    if(m == attrV){
-                                        attrs[i].nodeValue = obj[m];
-                                    }
+                                var attrV =  attrs[i].nodeValue.trim().replace(textRxp,"$4");
+                                if(m == attrV){
+                                    attrs[i].nodeValue = obj[m];
                                 }
                             }
+                          }
                         }
                         //console.log(newTag)
                         elem.appendChild(newTag);
@@ -1161,51 +1174,54 @@
                     break;
                 case 3:
                     if(rexpr.test(nodes[i].nodeValue)){
-                        SWZ.scanText(nodes[i], vmodels); //扫描文本节点
+                        SWZ.scanText(nodes[i], vmodels,i); //扫描文本节点
                     }
                     break;
             }
         }
     };
-   /**/
     SWZ.scanExpr = function(str){
-            var tokens = [],
-                value, start = 0,
-                stop
-            do {
-                stop = str.indexOf(openTag, start);
-                if (stop === -1) {
-                    break
-                }
-                value = str.slice(start, stop);
-                if (value) { // {{ 左边的文本
-                    tokens.push({
-                        value: value,
-                        filters: "",
-                        expr: false
-                    })
-                }
-                start = stop + openTag.length;
-                stop = str.indexOf(closeTag, start);
-                if (stop === -1) {
-                    break
-                }
-                value = str.slice(start, stop);
-                if (value) { //处理{{ }}插值表达式
-                    tokens.push(SWZ.getToken(value, start))
-                }
-                start = stop + closeTag.length;
-            } while (1)
-            value = str.slice(start);
-            if (value) { //}} 右边的文本
+        var arrayReg =  ["{{", "}}"];
+        var tokens = [],
+            value, start = 0,
+            stop
+        do {
+            openTag = arrayReg[0];
+            closeTag = arrayReg[1];
+            stop = str.indexOf(openTag, start);
+            if (stop === -1) {
+                break
+            }
+            value = str.slice(start, stop)
+            if (value) { // {{ 左边的文本
                 tokens.push({
                     value: value,
-                    expr: false,
-                    filters: ""
+                    filters: "",
+                    expr: false
                 })
             }
-            return tokens
+            start = stop + openTag.length
+            stop = str.indexOf(closeTag, start)
+            if (stop === -1) {
+                break
+            }
+            value = str.slice(start, stop);
+            if (value) { //处理{{ }}插值表达式
+                tokens.push(SWZ.getToken(value, start))
+            }
+            start = stop + closeTag.length
+        } while (1)
+        value = str.slice(start)
+        if (value) { //}} 右边的文本
+            tokens.push({
+                value: value,
+                expr: false,
+                filters: ""
+            })
+        }
+        return tokens
     };
+    /*得到对象数组*/
    SWZ.getToken = function(value){
        var rhasHtml = /\|\s*html(?:\b|$)/,
            r11a = /\|\|/g,
@@ -1230,10 +1246,21 @@
                filters: "",
                expr: true
            }
-
    };
+    SWZ.handleBind = function(data,vmodels){
+        /* 赋值操作*/
+         for(var i=0;i<vmodels.length;i++){
+             var model = vmodels[i].$model;
+             for(var j in model){
+                 if(j === data.value){
+                     data.value = model[j];
+                 }
+             }
+         }
+        data.element.textContent = data.value;
+    };
     /*扫描文本节点*/
-    SWZ.scanText = function(elem, vmodels){
+    SWZ.scanText = function(elem, vmodels,index){
       var roneTime = /^\s*::/;
       var rhasHtml = /\|\s*html(?:\b|$)/;
       var textRxp2 = /^({{)(\w+)(}})$/g;
@@ -1258,16 +1285,9 @@
                 }
                 swzFragment.appendChild(node)
             }
-           // elem.parentNode.replaceChild(swzFragment, elem);
-        }
-        var nodeV = elem.nodeValue.trim().replace(textRxp2,"$2");
-        /*赋值操作*/
-        for(var i=0;i<vmodels.length;i++){
-            var model = vmodels[i].$model;
-            for(var j in model){
-                if(j === nodeV){
-                    elem.nodeValue = model[j];
-                }
+           elem.parentNode.replaceChild(swzFragment, elem);
+            for(var i=0;i<bindings.length;i++){
+                SWZ.handleBind(bindings[i],vmodels);
             }
         }
     };
