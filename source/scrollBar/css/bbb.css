@@ -1,0 +1,22 @@
+
+
+/*全部样式*/
+*{margin:0;padding:0;list-style-type:none;}
+body{font-family:Arial, Helvetica, sans-serif;font-size:80%;}
+.scroll-pane{width:400px;height:500px;overflow:auto;background:#ccc;float:left;}
+
+
+
+/* scrollBar 必要元素 */
+.scrollBarContainer{position:relative;overflow:hidden;z-index:1;margin: 0 auto}
+.scrollBarTrack{position:absolute;cursor:pointer;right:0;top:0;height:100%;background:#aaa;background:url(../images/scrollBar_bg.png) repeat-y;}
+.scrollBarDrag{position:absolute;cursor:pointer;overflow:hidden;z-index: 99999999;left: 9px;}
+/*scrollBar核心*/
+.scrollBarDragTop{position:absolute;top: 1px;left:0;overflow:hidden;background:url(../images/scrollBar_up.png) no-repeat;height:6px;}
+.scrollBarDragMiddle{position:absolute;top:7px;left:0;background:url(../images/scrollBar_middle.png) repeat-y;height:8px;}
+.scrollBarDragBottom{position:absolute;bottom:0;left:0;overflow:hidden;background:url(../images/scrollBar_down.png) no-repeat;height:8px;}
+/*scrollBar上下箭头*/
+a.scrollArrowUp{display:block;position:absolute;z-index:1;top:0;right:0;text-indent:-2000px;overflow:hidden;height:48px;background:url(../images/scrollBar_arrowUp.png) no-repeat;}
+a.scrollArrowDown{display:block;position:absolute;z-index:1;bottom:0;right:0;text-indent:-2000px;overflow:hidden;height:48px;background:url(../images/scrollBar_arrowDown.png) no-repeat}
+
+
