@@ -970,6 +970,7 @@
 
     };
     var textRxp = /({{)(\w+)(\.)(\w+)(}})/g;
+    var attrRxp = /(el.)(\w+)/g;
     /*ng-repeat 循环渲染数据实现*/
     SWZ.scanRepeat = function(elem,vmodels,re){
         var nodes = elem.childNodes;
@@ -984,42 +985,31 @@
             for(var j in model){
                 if(SWZ.isArray(model[j])){
                     var repeatArr = model[j];
-                    var tagHtml = tag.innerHTML.trim();
                     elem.innerHTML = "";
                     /*遍历ng-repeat数组*/
+                    var reValue = re.nodeValue;
+                    /*绑定文本节点*/
+                    SWZ.scanText(tag.childNodes[0],vmodels,i,reValue);
                     for(var r =0; r<repeatArr.length; r++){
+                        //console.log(tag)
                         var obj = repeatArr[r];
-                        var newTag = tag.cloneNode();
-                        /*绑定文本节点*/
-                        if(textRxp.test(tagHtml)){
-                            var hmatch = tagHtml.match(textRxp)||[];
-                            if(hmatch.length>1){
-                                var reValue = re.nodeValue;
-                                SWZ.scanText(tag.childNodes[0],vmodels,i,reValue);
-                               // console.log(tag.childNodes[0].nodeValue)
-                                //newTag.innerHTML = tag.childNodes[0].nodeValue;
-                            }else{
-                                nodeText = tagHtml.replace(textRxp,"$4");
-                                for(var m in obj){
-                                    if(m == nodeText){
-                                        newTag.innerHTML = obj[m];
-                                    }
-                                }
-                            }
-                        }
                         /*绑定属性节点*/
-                        var attrs = newTag.attributes;
+                        var attrs = tag.attributes;
+                        console.log(obj)
                         for(var m in obj){
                             for(var i=0;i<attrs.length;i++){
-                                if(textRxp.test(attrs[i].nodeValue)){
-                                    var attrV =  attrs[i].nodeValue.trim().replace(textRxp,"$4");
+                                if(attrRxp.test(attrs[i].nodeValue)){
+                                    var attrV =  attrs[i].nodeValue.trim().replace("el.","");
                                     if(m == attrV){
                                         attrs[i].nodeValue = obj[m];
                                     }
                                 }
                             }
                         }
-                        //console.log(newTag)
+                        var newTag = tag.cloneNode();
+                        newTag.innerHTML = tag.innerHTML;
+                        newTag.attributes = tag.attributes;
+                        console.log(tag.attributes);
                         elem.appendChild(newTag);
                     }
                 }
