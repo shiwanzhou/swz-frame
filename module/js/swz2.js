@@ -988,28 +988,27 @@
                     elem.innerHTML = "";
                     /*遍历ng-repeat数组*/
                     var reValue = re.nodeValue;
-                    /*绑定文本节点*/
-                    SWZ.scanText(tag.childNodes[0],vmodels,i,reValue);
                     for(var r =0; r<repeatArr.length; r++){
-                        //console.log(tag)
+                        /*绑定文本节点*/
+                       //console.log(repeatArr[r]);
+                        if(repeatArr[r]){
+                          // console.log(tag.childNodes[0])
+                            var ss = tag.innerHTML;
+                            SWZ.scanText(tag.childNodes[0],vmodels,i,repeatArr[r],ss);
+                        }
                         var obj = repeatArr[r];
                         /*绑定属性节点*/
                         var attrs = tag.attributes;
-                        console.log(obj)
-                        for(var m in obj){
-                            for(var i=0;i<attrs.length;i++){
-                                if(attrRxp.test(attrs[i].nodeValue)){
-                                    var attrV =  attrs[i].nodeValue.trim().replace("el.","");
-                                    if(m == attrV){
-                                        attrs[i].nodeValue = obj[m];
+                        for(var p=0;p<attrs.length;p++){
+                                for(var m in obj){
+                                    if(m ===  attrs[p].nodeName){
+                                        attrs[p].nodeValue = obj[m];
                                     }
-                                }
-                            }
+                               }
                         }
                         var newTag = tag.cloneNode();
                         newTag.innerHTML = tag.innerHTML;
                         newTag.attributes = tag.attributes;
-                        console.log(tag.attributes);
                         elem.appendChild(newTag);
                     }
                 }
@@ -1235,26 +1234,15 @@
     };
     SWZ.handleBind = function(data,vmodels,reVal){
         /*ng-repeat 赋值操作*/
+        //console.log(reVal)
         if(reVal){
-            for(var i=0;i<vmodels.length;i++){
-                var model = vmodels[i].$model;
-              //  console.log(model)
-                for(var j in model){
-                    if(j === reVal){
-                        /*取出对应数组*/
-                        var arr = model[j];
-                        for(var k=0;k<arr.length;k++){
-                             var obj = arr[k];
-                            for(var o in obj){
-                                 if(o === data.value.replace("el.","")){
-                                     data.value = obj[o];
-                                     data.element.textContent = data.value;
-                                 }
-                            }
-                        }
-                    }
-                }
-            }
+                  for(var o in reVal){
+                      if(o === data.value.replace("el.","")){
+                          data.value = reVal[o];
+                          data.element.textContent = data.value ;
+                      }
+                  }
+
         }else{
             /*普通赋值操作*/
             for(var i=0;i<vmodels.length;i++){
@@ -1270,11 +1258,15 @@
 
     };
     /*扫描文本节点*/
-    SWZ.scanText = function(elem, vmodels,index,reVal){
+    SWZ.bbArr = [];
+    SWZ.scanText = function(elem, vmodels,index,reVal,ss){
         var roneTime = /^\s*::/;
         var rhasHtml = /\|\s*html(?:\b|$)/;
         var textRxp2 = /^({{)(\w+)(}})$/g;
         var   tokens = SWZ.scanExpr(elem.nodeValue);
+        if(reVal){
+            console.log(elem.nodeValue)
+        }
         var bindings = [];
         if (tokens.length) {
             for (var i = 0; token = tokens[i++]; ) {
@@ -1296,9 +1288,34 @@
                 swzFragment.appendChild(node)
             }
             elem.parentNode.replaceChild(swzFragment, elem);
-            for(var i=0;i<bindings.length;i++){
-                SWZ.handleBind(bindings[i],vmodels,reVal);
+            if(reVal){
+                var bbArr = {"bbArr":SWZ.bbArr};
+                    if(bindings.length>0){
+                        for(var k=0;k<bindings.length;k++){
+                               // var hh = bindings[k].bbArr;
+                            var uu = bindings[k];
+                          //  console.log(uu)
+                            if(uu.value){
+                                   SWZ.handleBind(bindings[k],vmodels,reVal);
+
+                            }else{
+                               // SWZ.bbArr.push(bindings[k])
+                               // console.log(SWZ.bbArr.length);
+                             //   SWZ.handleBind(bindings[k],vmodels,SWZ.bbArr);
+                            }
+                            //if(bindings[i].value.replace("el.","") == o){
+                              // console.log(reVal[o])
+                          //  }
+                            // SWZ.handleBind(bindings[i],vmodels,reVal);
+                        }
+                }
+               console.log(22)
+            }else{
+                for(var i=0;i<bindings.length;i++){
+                    SWZ.handleBind(bindings[i],vmodels,reVal);
+                }
             }
+
         }
     };
 
