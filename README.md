@@ -111,6 +111,12 @@
                                       vm.isShow = true; //目前有bug
                                    }
                              });
+               (8)ng-html 加载html资源，替换当前标签，目前支持例如：
+                           <div ng-html="module/view/test.html"></div>
+                           对应:
+                                   define("id",function(vm){
+
+                                   });
 
           .scan(dom):dom 加载时候对节点进行自动扫描，处理数据绑定，渲染页面；
 
