@@ -943,10 +943,42 @@
         SWZ.scanTag(elem, vmodels);
     };
     var ngAttr = /ng-(\w+)-?(.*)/;
+    /*统一加载资源*/
+    SWZ.onLoad = function(){
+
+    };
+    SWZ.getXHR = function () {
+        return new (window.XMLHttpRequest || ActiveXObject)("Microsoft.XMLHTTP");
+    };
+    /*加载html 资源*/
+    SWZ.loadHtml = function(elem,ngHtml){
+        var url = ngHtml.nodeValue;
+        var xhr = SWZ.getXHR();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                var status = xhr.status;
+                if (status > 399 && status < 600) {
+                    throw url + " 对应资源不存在或没有开启 CORS";
+                } else {
+                    log("debug: 已成功加载 " + url)
+                    elem.parentNode.replaceChild(SWZ.parseHTML(xhr.responseText),elem)
+                }
+            }
+        };
+        var time = "_=" + (new Date() - 0);
+        var _url = url.indexOf("?") === -1 ? url + "?" + time : url + "&" + time;
+        xhr.open("GET", _url, true);
+        if ("withCredentials" in xhr) {//这是处理跨域
+            xhr.withCredentials = true
+        }
+        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+        xhr.send();
+    };
     /*扫描主要标签*/
     SWZ.scanTag = function(elem, vmodels){
         var c = elem.getAttributeNode("ng-controller");
         var re = elem.getAttributeNode("ng-repeat");
+        var ngHtml = elem.getAttributeNode("ng-html");
         if(c){
             var node = c;
             var newVmodel = SWZ.vmodels;
@@ -963,6 +995,8 @@
             if(!SWZ.binding){
                 SWZ.scanRepeat(elem,vmodels,re);
             }
+        }else if(ngHtml){
+            SWZ.loadHtml(elem,ngHtml);
         }else{
             SWZ.scanAttr(elem, vmodels); //扫描特性节点
         }
