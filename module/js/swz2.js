@@ -1028,6 +1028,7 @@
                         if(repeatArr[r]){
                           // console.log(tag.childNodes[0])
                             var ss = tag.innerHTML;
+                           // console.log(repeatArr[r])
                             SWZ.scanText(tag.childNodes[0],vmodels,i,repeatArr[r],ss);
                         }
                         var obj = repeatArr[r];
@@ -1078,7 +1079,7 @@
                             SWZ.scan(DOC.body,SWZ.vmodels);
                             SWZ.binding = true;
                         };
-                        SWZ.bind(elem,ngName,fn);
+                        SWZ.bind(elem,ngName,callback);
                     }
                 }
             }
@@ -1267,27 +1268,30 @@
         }
     };
     SWZ.handleBind = function(data,vmodels,reVal){
-        /*ng-repeat 赋值操作*/
-        //console.log(reVal)
-        if(reVal){
-                  for(var o in reVal){
-                      if(o === data.value.replace("el.","")){
-                          data.value = reVal[o];
-                          data.element.textContent = data.value ;
-                      }
-                  }
-
-        }else{
-            /*普通赋值操作*/
-            for(var i=0;i<vmodels.length;i++){
-                var model = vmodels[i].$model;
-                for(var j in model){
-                    if(j === data.value){
+        for( var i=0;i <vmodels.length; i++ ){
+            var model = vmodels[i].$model;
+            for( var j in model ){
+                var uu =  model[j];
+                /*ng-repeat 赋值操作*/
+                if( SWZ.isArray(uu)  ){
+                    var arr = uu;
+                    for(var m = 0; m<arr.length; m++){
+                        var obj = arr[m];
+                        for(var u in obj){
+                            if( u === data.value.replace("el.","") ){
+                                data.value = obj[u];
+                                data.element.textContent = data.value;
+                            }
+                        }
+                    }
+                 /*普通赋值操作*/
+                } else {
+                    if ( j === data.value ) {
                         data.value = model[j];
+                        data.element.textContent = data.value;
                     }
                 }
             }
-            data.element.textContent = data.value;
         }
 
     };
@@ -1298,9 +1302,6 @@
         var rhasHtml = /\|\s*html(?:\b|$)/;
         var textRxp2 = /^({{)(\w+)(}})$/g;
         var   tokens = SWZ.scanExpr(elem.nodeValue);
-        if(reVal){
-            console.log(elem.nodeValue)
-        }
         var bindings = [];
         if (tokens.length) {
             for (var i = 0; token = tokens[i++]; ) {
@@ -1310,47 +1311,25 @@
                         token.oneTime = true
                         return ""
                     })// jshint ignore:line
-                    token.type = "text";
-                    token.element = node;
+                    token.type = "text"
+                    token.element = node
                     token.filters = token.filters.replace(rhasHtml, function (a, b,c) {
-                        token.type = "html";
+                        token.type = "html"
                         return ""
-                    });// jshint ignore:line
-                    token.pos = index * 1000 + i;
-                    bindings.push(token);//收集带有插值表达式的文本
+                    })// jshint ignore:line
+                    token.pos = index * 1000 + i
+                    bindings.push(token) //收集带有插值表达式的文本
                 }
                 swzFragment.appendChild(node)
             }
             elem.parentNode.replaceChild(swzFragment, elem);
-            if(reVal){
-                var bbArr = {"bbArr":SWZ.bbArr};
-                    if(bindings.length>0){
-                        for(var k=0;k<bindings.length;k++){
-                               // var hh = bindings[k].bbArr;
-                            var uu = bindings[k];
-                          //  console.log(uu)
-                            if(uu.value){
-                                   SWZ.handleBind(bindings[k],vmodels,reVal);
-
-                            }else{
-                               // SWZ.bbArr.push(bindings[k])
-                               // console.log(SWZ.bbArr.length);
-                             //   SWZ.handleBind(bindings[k],vmodels,SWZ.bbArr);
-                            }
-                            //if(bindings[i].value.replace("el.","") == o){
-                              // console.log(reVal[o])
-                          //  }
-                            // SWZ.handleBind(bindings[i],vmodels,reVal);
-                        }
-                }
-               console.log(22)
-            }else{
+            if(bindings.length){
                 for(var i=0;i<bindings.length;i++){
                     SWZ.handleBind(bindings[i],vmodels,reVal);
                 }
             }
-
         }
+
     };
 
     SWZ(document).ready(function(){
