@@ -1,0 +1,19 @@
+
+$ npm install --save-dev gulp-babel gulp-babel
+$ npm install --save-dev gulp-babel babel-preset-es2015
+
+gulpfile.js 文档：
+
+var gulp = require('gulp'),
+    babel = require('gulp-babel');
+
+gulp.task('es6', function(){
+    gulp.src('js/*.js')
+        .pipe(babel({
+            presets: ['es2015']
+        }))
+        .pipe(gulp.dest('dist/'));
+});
+gulp.task('startWatch', function(){
+    gulp.watch('js/*.js', ['es6']);
+})
